@@ -1,0 +1,5 @@
+﻿# Binarios gerados (use build.bat para recompilar)
+*.exe
+*.pdb
+bin/
+obj/
