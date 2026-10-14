@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -105,9 +105,9 @@ namespace CapturaTela
         public static string Describe(string key)
         {
             string k = key.ToLowerInvariant();
-            if (k == "info") return "Ver informacoes dos monitores e a posicao do cursor";
-            if (k == "windows") return "Listar as janelas abertas (titulos e programas)";
-            if (k == "target:screen") return "Capturar a tela inteira, um monitor ou uma regiao";
+            if (k == "info") return "Ver informações dos monitores e a posição do cursor";
+            if (k == "windows") return "Listar as janelas abertas (títulos e programas)";
+            if (k == "target:screen") return "Capturar a tela inteira, um monitor ou uma região";
             if (k == "target:window:*") return "Capturar janelas de qualquer programa";
             if (k.StartsWith("target:window:")) return "Capturar janelas do programa \"" + key.Substring("target:window:".Length) + "\"";
             if (k == "action:record") return "Gravar GIF e capturar com rolagem";
@@ -159,11 +159,11 @@ namespace CapturaTela
         public void Require(string key, string alwaysKey, string description)
         {
             var store = PermissionStore.Load();
-            if (!store.Enabled) throw Denied("o acesso por IA esta desativado nas configuracoes", description);
+            if (!store.Enabled) throw Denied("o acesso por IA está desativado nas configurações", description);
             if (once.Contains(key)) return;
 
             bool? known = store.Lookup(key);
-            if (known == false) throw Denied("voce negou essa permissao", description);
+            if (known == false) throw Denied("você negou essa permissão", description);
             if (known == true) return;
 
             var answer = ask(new PromptRequest { Client = Client, Key = key, AlwaysKey = alwaysKey, Description = description });
@@ -177,15 +177,15 @@ namespace CapturaTela
                 case PromptAnswer.DenyAlways:
                     store = PermissionStore.Load();
                     store.Set(alwaysKey, false); store.Save();
-                    throw Denied("voce negou essa permissao", description);
+                    throw Denied("você negou essa permissão", description);
                 default:
-                    throw Denied("voce negou (ou nao respondeu a tempo)", description);
+                    throw Denied("você negou (ou não respondeu a tempo)", description);
             }
         }
 
         static CliException Denied(string why, string what)
         {
-            return new CliException("Permissao negada: " + what + " (" + why + ").", 3);
+            return new CliException("Permissão negada: " + what + " (" + why + ").", 3);
         }
     }
 }

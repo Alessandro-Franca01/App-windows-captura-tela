@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -21,7 +21,7 @@ namespace CapturaTela
 
         public static readonly string[] Names =
         {
-            "Retangulo", "Forma livre", "Janela", "Tela inteira", "Rolagem auto", "Rolagem manual", "Gravar GIF"
+            "Retângulo", "Forma livre", "Janela", "Tela inteira", "Rolagem automática", "Rolagem manual", "Gravar GIF"
         };
 
         public static int IndexOf(CaptureMode m)

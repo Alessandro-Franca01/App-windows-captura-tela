@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -60,7 +60,7 @@ namespace CapturaTela
             modeBox.DropDownStyle = ComboBoxStyle.DropDownList;
             modeBox.Items.AddRange(ModeList.Names);
             modeBox.SelectedIndex = ModeList.IndexOf((CaptureMode)settings.Mode);
-            modeBox.ToolTipText = "Modo de captura (Rolagem auto: o app rola sozinho; Rolagem manual: voce rola)";
+            modeBox.ToolTipText = "Modo de captura (Rolagem auto: o app rola sozinho; Rolagem manual: você rola)";
             modeBox.Width = 120;
             modeBox.SelectedIndexChanged += delegate { settings.Mode = (int)CurrentMode; settings.Save(); };
             bar.Items.Add(modeBox);
@@ -76,17 +76,17 @@ namespace CapturaTela
             bar.Items.Add(new ToolStripSeparator());
             undoBtn = Btn("Desfazer", "Desfazer (Ctrl+Z)", delegate { canvas.Undo(); });
             redoBtn = Btn("Refazer", "Refazer (Ctrl+Y)", delegate { canvas.Redo(); });
-            copyBtn = Btn("Copiar", "Copiar para a area de transferencia (Ctrl+C)", delegate { CopyImage(true); });
+            copyBtn = Btn("Copiar", "Copiar para a área de transferência (Ctrl+C)", delegate { CopyImage(true); });
             saveBtn = Btn("Salvar", "Salvar como... (Ctrl+S)", delegate { SaveImage(); });
             ocrBtn = Btn("Copiar texto", "Reconhecer o texto da imagem (OCR) e copiar", delegate { RunOcr(); });
             bar.Items.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn, ocrBtn });
             editItems.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn, ocrBtn });
 
-            settingsBtn = Btn("Configuracoes", "Atalho, salvamento automatico, bandeja e inicializacao", delegate { OpenSettings(); });
+            settingsBtn = Btn("Configurações", "Atalho, salvamento automático, bandeja e inicialização", delegate { OpenSettings(); });
             settingsBtn.Alignment = ToolStripItemAlignment.Right;
             bar.Items.Add(settingsBtn);
 
-            helpBtn = Btn("Ajuda", "Guia do usuario (F1)", delegate { OpenHelp(0); });
+            helpBtn = Btn("Ajuda", "Guia do usuário (F1)", delegate { OpenHelp(0); });
             helpBtn.Alignment = ToolStripItemAlignment.Right;
             bar.Items.Add(helpBtn);
 
@@ -97,21 +97,21 @@ namespace CapturaTela
             AddTool("highlighter", "Marca-texto", "Marca-texto");
             AddTool("arrow", "Seta", "Seta (Shift = 45 graus)");
             AddTool("line", "Linha", "Linha (Shift = 45 graus)");
-            AddTool("rect", "Retangulo", "Retangulo (Shift = quadrado)");
-            AddTool("ellipse", "Elipse", "Elipse (Shift = circulo)");
+            AddTool("rect", "Retângulo", "Retângulo (Shift = quadrado)");
+            AddTool("ellipse", "Elipse", "Elipse (Shift = círculo)");
             AddTool("text", "Texto", "Caixa de texto");
             AddTool("step", "Passo", "Marcador numerado (1, 2, 3...)");
-            AddTool("blur", "Desfocar", "Desfocar uma area (esconde dados sensiveis)");
-            AddTool("pixelate", "Pixelar", "Pixelar uma area (esconde dados sensiveis)");
+            AddTool("blur", "Desfocar", "Desfocar uma área (esconde dados sensíveis)");
+            AddTool("pixelate", "Pixelar", "Pixelar uma área (esconde dados sensíveis)");
             AddTool("crop", "Cortar", "Cortar a imagem");
             AddTool("picker", "Conta-gotas", "Pegar uma cor da imagem");
-            AddTool("eraser", "Borracha", "Borracha (apaga a anotacao tocada)");
+            AddTool("eraser", "Borracha", "Borracha (apaga a anotação tocada)");
             toolBtns["pen"].Checked = true;
 
             tools.Items.Add(new ToolStripSeparator());
-            colorBtn = Btn("Cor", "Cor das anotacoes", delegate { PickColor(); });
+            colorBtn = Btn("Cor", "Cor das anotações", delegate { PickColor(); });
             widthBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            widthBox.Items.AddRange(new object[] { "Fino", "Medio", "Grosso", "Extra grosso" });
+            widthBox.Items.AddRange(new object[] { "Fino", "Médio", "Grosso", "Extra grosso" });
             widthBox.SelectedIndex = settings.PenWidth;
             widthBox.Width = 90;
             widthBox.ToolTipText = "Espessura / tamanho / intensidade";
@@ -170,6 +170,7 @@ namespace CapturaTela
             Theme.Apply(bar, dark);
             Theme.Apply(tools, dark);
             Theme.Apply(status, dark);
+            if (tray.ContextMenuStrip != null) Theme.Apply(tray.ContextMenuStrip, dark);   // o menu da bandeja tambem segue o tema
             scroller.BackColor = dark ? Color.FromArgb(24, 24, 24) : Color.FromArgb(48, 48, 48);
             UpdateColorButton();
         }
@@ -226,15 +227,15 @@ namespace CapturaTela
             var menu = new ContextMenuStrip();
             menu.Items.Add("Abrir", null, delegate { ShowMain(); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Capturar retangulo", null, delegate { StartCapture(CaptureMode.Rectangle); });
+            menu.Items.Add("Capturar retângulo", null, delegate { StartCapture(CaptureMode.Rectangle); });
             menu.Items.Add("Capturar forma livre", null, delegate { StartCapture(CaptureMode.Freeform); });
             menu.Items.Add("Capturar janela", null, delegate { StartCapture(CaptureMode.Window); });
             menu.Items.Add("Capturar tela inteira", null, delegate { StartCapture(CaptureMode.FullScreen); });
-            menu.Items.Add("Captura com rolagem automatica", null, delegate { StartCapture(CaptureMode.Scroll); });
+            menu.Items.Add("Captura com rolagem automática", null, delegate { StartCapture(CaptureMode.Scroll); });
             menu.Items.Add("Captura com rolagem manual", null, delegate { StartCapture(CaptureMode.ScrollManual); });
             menu.Items.Add("Gravar GIF", null, delegate { StartCapture(CaptureMode.Record); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Configuracoes...", null, delegate { ShowMain(); OpenSettings(); });
+            menu.Items.Add("Configurações...", null, delegate { ShowMain(); OpenSettings(); });
             menu.Items.Add("Ajuda", null, delegate { ShowMain(); OpenHelp(0); });
             menu.Items.Add("Sair", null, delegate { exiting = true; Close(); });
             tray.ContextMenuStrip = menu;
@@ -432,7 +433,7 @@ namespace CapturaTela
             bool isCtrlShiftS = settings.HotMods == (Native.MOD_CONTROL | Native.MOD_SHIFT) && settings.HotKey == Keys.S;
             if (!isCtrlShiftS) Native.RegisterHotKey(Handle, HotkeyCtrlShiftS, Native.MOD_CONTROL | Native.MOD_SHIFT, (uint)Keys.S);
             statusLabel.Text = ok ? "Pronto - atalho: " + HotkeyLabel()
-                                  : "Atalho " + HotkeyLabel() + " indisponivel (em uso por outro programa). Escolha outro em Configuracoes.";
+                                  : "Atalho " + HotkeyLabel() + " indisponível (em uso por outro programa). Escolha outro em Configurações.";
         }
 
         protected override void WndProc(ref Message m)
@@ -539,8 +540,8 @@ namespace CapturaTela
                             if (result != null && result.Height <= area.Height + 2)
                             {
                                 ShowResult(result);
-                                statusLabel.Text = "A rolagem automatica nao moveu o conteudo. Tente o modo \"Rolagem manual\" na lista de modos.";
-                                Notify("Rolagem automatica sem efeito", "O conteudo nao rolou. Use o modo \"Rolagem manual\" e role voce mesmo.", ShowMain);
+                                statusLabel.Text = "A rolagem automática não moveu o conteúdo. Tente o modo \"Rolagem manual\" na lista de modos.";
+                                Notify("Rolagem automática sem efeito", "O conteúdo não rolou. Use o modo \"Rolagem manual\" e role você mesmo.", ShowMain);
                                 return true;
                             }
                         }
@@ -580,7 +581,7 @@ namespace CapturaTela
                 {
                     using (var d = new SaveFileDialog())
                     {
-                        d.Title = "Salvar gravacao";
+                        d.Title = "Salvar gravação";
                         d.Filter = "GIF animado (*.gif)|*.gif";
                         d.FileName = "Gravacao " + DateTime.Now.ToString("yyyy-MM-dd HHmmss");
                         if (d.ShowDialog() != DialogResult.OK) return false;
@@ -603,7 +604,7 @@ namespace CapturaTela
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Nao foi possivel salvar o GIF:\n" + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Não foi possível salvar o GIF:\n" + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
             finally
@@ -624,12 +625,12 @@ namespace CapturaTela
             CenterCanvas();
             SetEditEnabled(true);
             CopyImage(false);
-            string msg = "Captura: " + bmp.Width + " x " + bmp.Height + " px  -  copiada para a area de transferencia";
+            string msg = "Captura: " + bmp.Width + " x " + bmp.Height + " px  -  copiada para a área de transferência";
             string saved = settings.AutoSave ? AutoSaveCurrent() : null;
             if (saved != null) msg += "  -  salva em " + saved;
             statusLabel.Text = msg;
             if (saved != null) Notify("Captura salva", "Copiada e salva em " + saved + ". Clique para abrir.", delegate { OpenPath(saved); });
-            else Notify("Captura copiada", "Ela esta na area de transferencia. Clique para editar.", ShowMain);
+            else Notify("Captura copiada", "Ela está na área de transferência. Clique para editar.", ShowMain);
         }
 
         string AutoSaveCurrent()
@@ -648,7 +649,7 @@ namespace CapturaTela
             }
             catch (Exception ex)
             {
-                statusLabel.Text = "Falha no salvamento automatico: " + ex.Message;
+                statusLabel.Text = "Falha no salvamento automático: " + ex.Message;
                 return null;
             }
         }
@@ -662,7 +663,7 @@ namespace CapturaTela
             {
                 using (var flat = canvas.Flatten())
                     Clipboard.SetImage(flat);
-                if (announce) statusLabel.Text = "Copiado para a area de transferencia";
+                if (announce) statusLabel.Text = "Copiado para a área de transferência";
             }
             catch (Exception ex) { statusLabel.Text = "Falha ao copiar: " + ex.Message; }
         }
@@ -710,7 +711,7 @@ namespace CapturaTela
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Nao foi possivel salvar:\n" + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Não foi possível salvar:\n" + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

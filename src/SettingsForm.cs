@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -21,7 +21,7 @@ namespace CapturaTela
         public SettingsForm(AppSettings settings)
         {
             s = settings; mods = s.HotMods; key = s.HotKey;
-            Text = "Configuracoes";
+            Text = "Configurações";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
             StartPosition = FormStartPosition.CenterParent;
@@ -63,7 +63,7 @@ namespace CapturaTela
             Controls.Add(fmtBox);
             y += 38;
 
-            tray.Text = "Fechar a janela mantem o app na bandeja do sistema"; tray.Left = 16; tray.Top = y; tray.Width = 410;
+            tray.Text = "Fechar a janela mantém o app na bandeja do sistema"; tray.Left = 16; tray.Top = y; tray.Width = 410;
             tray.Checked = s.CloseToTray;
             Controls.Add(tray);
             y += 26;
@@ -71,7 +71,7 @@ namespace CapturaTela
             startup.Checked = AppSettings.GetStartWithWindows();
             Controls.Add(startup);
             y += 26;
-            notify.Text = "Mostrar notificacao depois de capturar ou gravar"; notify.Left = 16; notify.Top = y; notify.Width = 410;
+            notify.Text = "Mostrar notificação depois de capturar ou gravar"; notify.Left = 16; notify.Top = y; notify.Width = 410;
             notify.Checked = s.Notify;
             Controls.Add(notify);
             y += 34;
@@ -82,7 +82,7 @@ namespace CapturaTela
             themeBox.Left = 70; themeBox.Top = y; themeBox.Width = 160;
             Controls.Add(themeBox);
 
-            var perms = new Button { Text = "Permissoes da IA...", Left = 16, Top = 302, Width = 150 };
+            var perms = new Button { Text = "Permissões da IA...", Left = 16, Top = 302, Width = 150 };
             perms.Click += delegate { using (var f = new PermissionsForm()) f.ShowDialog(this); };
             Controls.Add(perms);
 

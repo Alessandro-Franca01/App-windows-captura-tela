@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -61,11 +61,17 @@ namespace CapturaTela
         {
             barButtons.Clear();
             var scr = Screen.PrimaryScreen.Bounds;
-            int w = 106, h = 32, gap = 4;
-            int total = ModeNames.Length * w + (ModeNames.Length - 1) * gap + 40 + gap;
+            // largura de cada botao = largura do texto + folga, para nada quebrar em duas linhas
+            int h = 36, gap = 4, pad = 32, closeW = 44;
+            var widths = new int[ModeNames.Length];
+            using (var g = CreateGraphics())
+            using (var f = new Font("Segoe UI", 9.5f))
+                for (int i = 0; i < widths.Length; i++) widths[i] = (int)Math.Ceiling(g.MeasureString(ModeNames[i], f).Width) + pad;
+            int total = closeW + gap * widths.Length;
+            foreach (int wd in widths) total += wd;
             int x = scr.X - origin.X + (scr.Width - total) / 2, y = scr.Y - origin.Y + 14;
-            for (int i = 0; i < ModeNames.Length; i++) { barButtons.Add(new Rectangle(x, y, w, h)); x += w + gap; }
-            barButtons.Add(new Rectangle(x, y, 40, h)); // fechar
+            for (int i = 0; i < widths.Length; i++) { barButtons.Add(new Rectangle(x, y, widths[i], h)); x += widths[i] + gap; }
+            barButtons.Add(new Rectangle(x, y, closeW, h)); // fechar
         }
 
         Rectangle BarBounds
@@ -328,10 +334,10 @@ namespace CapturaTela
         {
             string hint = mode == CaptureMode.Window ? "Clique na janela para capturar"
                         : mode == CaptureMode.Freeform ? "Desenhe a forma livre"
-                        : mode == CaptureMode.Scroll ? "Selecione a area com conteudo rolavel (o app rola sozinho com a roda do mouse)"
-                        : mode == CaptureMode.ScrollManual ? "Selecione a area com conteudo rolavel (voce mesmo rola, devagar, com a roda do mouse)"
-                        : mode == CaptureMode.Record ? "Selecione a area para gravar em GIF"
-                        : "Arraste para selecionar a area";
+                        : mode == CaptureMode.Scroll ? "Selecione a área com conteúdo rolável (o app rola sozinho com a roda do mouse)"
+                        : mode == CaptureMode.ScrollManual ? "Selecione a área com conteúdo rolável (você mesmo rola, devagar, com a roda do mouse)"
+                        : mode == CaptureMode.Record ? "Selecione a área para gravar em GIF"
+                        : "Arraste para selecionar a área";
             hint += "  -  Esc cancela  -  setas ajustam 1 px";
             using (var f = new Font("Segoe UI", 12))
             {

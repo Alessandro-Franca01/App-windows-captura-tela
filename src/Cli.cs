@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -193,7 +193,7 @@ namespace CapturaTela
 
         static JObj Info()
         {
-            Gate.Require("info", "info", "Ver informacoes dos monitores e a posicao do cursor");
+            Gate.Require("info", "info", "Ver informações dos monitores e a posição do cursor");
             var screens = new JArr();
             var all = Screen.AllScreens;
             for (int i = 0; i < all.Length; i++)
@@ -210,7 +210,7 @@ namespace CapturaTela
 
         static JObj Windows(CliArgs a)
         {
-            Gate.Require("windows", "windows", "Listar as janelas abertas (titulos e programas)");
+            Gate.Require("windows", "windows", "Listar as janelas abertas (títulos e programas)");
             string filter = a.Get("filter");
             var arr = new JArr();
             foreach (var w in Native.ListWindows(false))
@@ -464,7 +464,7 @@ namespace CapturaTela
 
             var vs = SystemInformation.VirtualScreen;
             Rectangle r;
-            if (!a.Has("window") && !a.Has("active")) NeedScreen(a.Has("region") ? "uma regiao" : "a tela inteira ou um monitor");
+            if (!a.Has("window") && !a.Has("active")) NeedScreen(a.Has("region") ? "uma região" : "a tela inteira ou um monitor");
             if (a.Has("fullscreen")) { r = vs; info = new JObj().Add("type", "fullscreen"); }
             else if (a.Has("screen"))
             {

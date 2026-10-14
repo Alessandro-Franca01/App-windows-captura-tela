@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Media;
 using System.Windows.Forms;
@@ -29,7 +29,7 @@ namespace CapturaTela
         public PermissionDialog(PromptRequest req, int armMs, int timeoutSeconds)
         {
             left = timeoutSeconds;
-            Text = "Pedido de permissao";
+            Text = "Pedido de permissão";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
@@ -47,11 +47,11 @@ namespace CapturaTela
             };
             var hint = new Label
             {
-                Text = "\"Sempre\" fica salvo e pode ser revogado em Configuracoes > Permissoes da IA. " +
-                       "\"Uma vez\" vale so para este pedido.",
-                Left = 20, Top = 118, Width = 520, Height = 40, ForeColor = Color.FromArgb(140, 140, 140)
+                Text = "\"Sempre\" fica salvo e pode ser revogado em Configurações > Permissões da IA. " +
+                       "\"Uma vez\" vale só para este pedido.",
+                Left = 20, Top = 118, Width = 520, Height = 40, ForeColor = Theme.Muted
             };
-            countdown.Left = 20; countdown.Top = 160; countdown.Width = 520; countdown.ForeColor = Color.FromArgb(140, 140, 140);
+            countdown.Left = 20; countdown.Top = 160; countdown.Width = 520; countdown.ForeColor = Theme.Muted;
 
             SetupButton(OnceBtn, "Permitir uma vez", 20, PromptAnswer.Once);
             SetupButton(AlwaysBtn, "Permitir sempre", 164, PromptAnswer.Always);
@@ -96,7 +96,7 @@ namespace CapturaTela
 
         void UpdateCountdown()
         {
-            countdown.Text = "Negando automaticamente em " + left + " s se nao houver resposta.";
+            countdown.Text = "Negando automaticamente em " + left + " s se não houver resposta.";
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
