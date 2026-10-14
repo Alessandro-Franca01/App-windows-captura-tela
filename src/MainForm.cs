@@ -22,114 +22,136 @@ namespace CapturaTela
 
         readonly ToolStrip bar = new ToolStrip();
         readonly ToolStrip tools = new ToolStrip();
-        readonly ToolStripComboBox modeBox = new ToolStripComboBox();
-        readonly ToolStripComboBox delayBox = new ToolStripComboBox();
-        readonly ToolStripComboBox widthBox = new ToolStripComboBox();
+        ChoiceButton modeBox, delayBox, widthBox;
+        int iconSize;
+        float uiScale = 1f;
         readonly Dictionary<string, ToolStripButton> toolBtns = new Dictionary<string, ToolStripButton>();
         readonly List<ToolStripItem> editItems = new List<ToolStripItem>();
-        readonly ToolStripLabel zoomLabel = new ToolStripLabel("100%");
+        ToolStripButton zoomLabel;
         readonly ToolStripButton colorBtn, copyBtn, saveBtn, undoBtn, redoBtn, newBtn, settingsBtn, helpBtn, ocrBtn;
         HelpForm helpForm;
         Action balloonClick;
         readonly Panel scroller = new Panel();
         readonly Canvas canvas = new Canvas();
-        readonly Label placeholder = new Label();
+        readonly EmptyState placeholder = new EmptyState();
         readonly StatusStrip status = new StatusStrip();
         readonly ToolStripStatusLabel statusLabel = new ToolStripStatusLabel();
+        readonly ToolStripStatusLabel sizeLabel = new ToolStripStatusLabel();
         readonly NotifyIcon tray = new NotifyIcon();
 
         public MainForm(bool startHidden)
         {
             this.startHidden = startHidden;
             Text = "Ferramenta de Captura";
-            ClientSize = new Size(960, 640);
+            ClientSize = new Size(1040, 680);
             MinimumSize = new Size(700, 400);
             StartPosition = FormStartPosition.CenterScreen;
             Icon = AppIcon.Get(SystemInformation.IconSize);
             KeyPreview = true;
             Theme.Preference = settings.Theme;
 
+            float sc;
+            using (var gdi = CreateGraphics()) sc = gdi.DpiX / 96f;
+            int iconPx = (int)Math.Round(20 * sc);
+            iconSize = iconPx; uiScale = sc;
+
             // ---- barra principal: captura e acoes ----
             bar.GripStyle = ToolStripGripStyle.Hidden;
-            bar.Padding = new Padding(6, 4, 6, 4);
+            bar.Padding = new Padding((int)(8 * sc), (int)(6 * sc), (int)(8 * sc), (int)(6 * sc));
+            bar.ImageScalingSize = new Size(iconPx, iconPx);
 
-            newBtn = Btn("+ Novo", "Nova captura (Ctrl+N ou o atalho global)", delegate { StartCapture(CurrentMode); });
-            newBtn.Font = new Font(Font, FontStyle.Bold);
+            newBtn = Btn("Nova captura", "Nova captura (Ctrl+N ou o atalho global)", delegate { StartCapture(CurrentMode); }, IconKind.Capture, true);
+            newBtn.Name = "primary";
+            newBtn.Font = new Font("Segoe UI Semibold", 9.5f);
             bar.Items.Add(newBtn);
 
-            modeBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            modeBox.Items.AddRange(ModeList.Names);
+            var shortcuts = new string[ModeList.Names.Length];
+            for (int i = 0; i < shortcuts.Length; i++) shortcuts[i] = (i + 1).ToString();
+            modeBox = new ChoiceButton(ModeList.Names, delegate(int i) { return ModeIcon(ModeList.Order[i]); }, shortcuts, iconPx, true, true);
+            modeBox.ToolTipText = "Modo de captura (na seleção, as teclas 1 a 7 trocam de modo). Rolagem automática: o app rola sozinho; Rolagem manual: você rola.";
+            Pad(modeBox, 9, 7);
             modeBox.SelectedIndex = ModeList.IndexOf((CaptureMode)settings.Mode);
-            modeBox.ToolTipText = "Modo de captura (Rolagem auto: o app rola sozinho; Rolagem manual: você rola)";
-            modeBox.Width = 120;
             modeBox.SelectedIndexChanged += delegate { settings.Mode = (int)CurrentMode; settings.Save(); };
             bar.Items.Add(modeBox);
 
-            delayBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            delayBox.Items.AddRange(new object[] { "Sem atraso", "1 segundo", "2 segundos", "3 segundos", "5 segundos", "10 segundos" });
-            delayBox.SelectedIndex = settings.Delay;
+            delayBox = new ChoiceButton(new string[] { "Sem atraso", "1 segundo", "2 segundos", "3 segundos", "5 segundos", "10 segundos" }, null, null, iconPx, true, false);
+            delayBox.Tag = IconKind.Clock;
             delayBox.ToolTipText = "Atraso antes da captura";
-            delayBox.Width = 100;
+            Pad(delayBox, 9, 7);
+            delayBox.SelectedIndex = settings.Delay;
             delayBox.SelectedIndexChanged += delegate { settings.Delay = delayBox.SelectedIndex; settings.Save(); };
             bar.Items.Add(delayBox);
 
-            bar.Items.Add(new ToolStripSeparator());
-            undoBtn = Btn("Desfazer", "Desfazer (Ctrl+Z)", delegate { canvas.Undo(); });
-            redoBtn = Btn("Refazer", "Refazer (Ctrl+Y)", delegate { canvas.Redo(); });
-            copyBtn = Btn("Copiar", "Copiar para a área de transferência (Ctrl+C)", delegate { CopyImage(true); });
-            saveBtn = Btn("Salvar", "Salvar como... (Ctrl+S)", delegate { SaveImage(); });
-            ocrBtn = Btn("Copiar texto", "Reconhecer o texto da imagem (OCR) e copiar", delegate { RunOcr(); });
-            bar.Items.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn, ocrBtn });
+            bar.Items.Add(Sep());
+            undoBtn = Btn("Desfazer", "Desfazer (Ctrl+Z)", delegate { canvas.Undo(); }, IconKind.Undo, false);
+            redoBtn = Btn("Refazer", "Refazer (Ctrl+Y)", delegate { canvas.Redo(); }, IconKind.Redo, false);
+            copyBtn = Btn("Copiar", "Copiar para a área de transferência (Ctrl+C)", delegate { CopyImage(true); }, IconKind.Copy, true);
+            saveBtn = Btn("Salvar", "Salvar como... (Ctrl+S)", delegate { SaveImage(); }, IconKind.Save, true);
+            ocrBtn = Btn("Copiar texto", "Copiar texto da imagem: reconhece o texto (OCR) e copia", delegate { RunOcr(); }, IconKind.Ocr, false);
+            bar.Items.AddRange(new ToolStripItem[] { undoBtn, redoBtn, Sep(), copyBtn, saveBtn, ocrBtn });
             editItems.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn, ocrBtn });
 
-            settingsBtn = Btn("Configurações", "Atalho, salvamento automático, bandeja e inicialização", delegate { OpenSettings(); });
+            // itens alinhados a direita: o primeiro adicionado fica mais a direita
+            settingsBtn = Btn("Configurações", "Configurações: atalho, salvamento automático, bandeja, tema e permissões da IA", delegate { OpenSettings(); }, IconKind.Settings, false);
             settingsBtn.Alignment = ToolStripItemAlignment.Right;
             bar.Items.Add(settingsBtn);
 
-            helpBtn = Btn("Ajuda", "Guia do usuário (F1)", delegate { OpenHelp(0); });
+            helpBtn = Btn("Ajuda", "Guia do usuário (F1)", delegate { OpenHelp(0); }, IconKind.Help, false);
             helpBtn.Alignment = ToolStripItemAlignment.Right;
             bar.Items.Add(helpBtn);
 
             // ---- segunda barra: ferramentas de edicao ----
             tools.GripStyle = ToolStripGripStyle.Hidden;
-            tools.Padding = new Padding(6, 2, 6, 2);
-            AddTool("pen", "Caneta", "Caneta");
-            AddTool("highlighter", "Marca-texto", "Marca-texto");
-            AddTool("arrow", "Seta", "Seta (Shift = 45 graus)");
-            AddTool("line", "Linha", "Linha (Shift = 45 graus)");
-            AddTool("rect", "Retângulo", "Retângulo (Shift = quadrado)");
-            AddTool("ellipse", "Elipse", "Elipse (Shift = círculo)");
-            AddTool("text", "Texto", "Caixa de texto");
-            AddTool("step", "Passo", "Marcador numerado (1, 2, 3...)");
-            AddTool("blur", "Desfocar", "Desfocar uma área (esconde dados sensíveis)");
-            AddTool("pixelate", "Pixelar", "Pixelar uma área (esconde dados sensíveis)");
-            AddTool("crop", "Cortar", "Cortar a imagem");
-            AddTool("picker", "Conta-gotas", "Pegar uma cor da imagem");
-            AddTool("eraser", "Borracha", "Borracha (apaga a anotação tocada)");
+            tools.Padding = new Padding((int)(8 * sc), (int)(4 * sc), (int)(8 * sc), (int)(4 * sc));
+            tools.ImageScalingSize = new Size(iconPx, iconPx);
+            AddTool("pen", "Caneta", IconKind.Pen);
+            AddTool("highlighter", "Marca-texto", IconKind.Highlighter);
+            tools.Items.Add(Sep());
+            AddTool("arrow", "Seta (Shift = 45 graus)", IconKind.Arrow);
+            AddTool("line", "Linha (Shift = 45 graus)", IconKind.Line);
+            AddTool("rect", "Retângulo (Shift = quadrado)", IconKind.Rect);
+            AddTool("ellipse", "Elipse (Shift = círculo)", IconKind.Ellipse);
+            tools.Items.Add(Sep());
+            AddTool("text", "Texto: clique onde quer escrever", IconKind.Text);
+            AddTool("step", "Passo: marcador numerado (1, 2, 3...)", IconKind.Step);
+            tools.Items.Add(Sep());
+            AddTool("blur", "Desfocar uma área (esconde dados sensíveis)", IconKind.Blur);
+            AddTool("pixelate", "Pixelar uma área (esconde dados sensíveis)", IconKind.Pixelate);
+            tools.Items.Add(Sep());
+            AddTool("crop", "Cortar a imagem", IconKind.Crop);
+            AddTool("picker", "Conta-gotas: pegar uma cor da imagem", IconKind.Picker);
+            AddTool("eraser", "Borracha: apaga a anotação tocada", IconKind.Eraser);
             toolBtns["pen"].Checked = true;
 
-            tools.Items.Add(new ToolStripSeparator());
-            colorBtn = Btn("Cor", "Cor das anotações", delegate { PickColor(); });
-            widthBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            widthBox.Items.AddRange(new object[] { "Fino", "Médio", "Grosso", "Extra grosso" });
+            tools.Items.Add(Sep());
+            colorBtn = Btn("Cor", "Cor das anotações (clique para trocar)", delegate { PickColor(); }, IconKind.Dot, false);
+            widthBox = new ChoiceButton(new string[] { "Fino", "Médio", "Grosso", "Extra grosso" },
+                delegate(int i) { return new WidthSample(new float[] { 2, 4, 8, 14 }[i]); }, null, iconPx, false, true);
+            widthBox.ToolTipText = "Espessura do traço, tamanho do texto e intensidade do desfoque";
+            Pad(widthBox, 7, 7);
             widthBox.SelectedIndex = settings.PenWidth;
-            widthBox.Width = 90;
-            widthBox.ToolTipText = "Espessura / tamanho / intensidade";
             widthBox.SelectedIndexChanged += delegate { ApplyWidth(); settings.PenWidth = widthBox.SelectedIndex; settings.Save(); };
             tools.Items.AddRange(new ToolStripItem[] { colorBtn, widthBox });
             editItems.AddRange(new ToolStripItem[] { colorBtn, widthBox });
             canvas.PenColor = Color.FromArgb(settings.PenColor);
             UpdateColorButton();
 
-            tools.Items.Add(new ToolStripSeparator());
-            var zoomOut = Btn("-", "Diminuir zoom (Ctrl + roda do mouse)", delegate { canvas.SetZoom(canvas.Zoom / 1.25f); });
-            var zoomIn = Btn("+", "Aumentar zoom (Ctrl + roda do mouse)", delegate { canvas.SetZoom(canvas.Zoom * 1.25f); });
-            var zoom100 = Btn("100%", "Tamanho real", delegate { canvas.SetZoom(1f); });
-            var zoomFit = Btn("Ajustar", "Ajustar a janela", delegate { FitZoom(); });
-            tools.Items.AddRange(new ToolStripItem[] { zoomOut, zoomLabel, zoomIn, zoom100, zoomFit });
-            editItems.AddRange(new ToolStripItem[] { zoomOut, zoomIn, zoom100, zoomFit });
+            // zoom, alinhado a direita (o primeiro adicionado fica mais a direita)
+            var zoomFit = Btn("Ajustar", "Ajustar à janela", delegate { FitZoom(); }, IconKind.Fit, false);
+            var zoomIn = Btn("Mais zoom", "Aumentar o zoom (Ctrl + roda do mouse)", delegate { canvas.SetZoom(canvas.Zoom * 1.25f); }, IconKind.ZoomIn, false);
+            zoomLabel = Btn("100%", "Tamanho real (100%)", delegate { canvas.SetZoom(1f); }, IconKind.Dot, true);
+            zoomLabel.Tag = null; zoomLabel.Image = null; zoomLabel.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            zoomLabel.AutoSize = false; zoomLabel.Width = (int)(56 * sc); zoomLabel.TextAlign = ContentAlignment.MiddleCenter;
+            var zoomOut = Btn("Menos zoom", "Diminuir o zoom (Ctrl + roda do mouse)", delegate { canvas.SetZoom(canvas.Zoom / 1.25f); }, IconKind.ZoomOut, false);
+            foreach (var z in new ToolStripItem[] { zoomFit, zoomIn, zoomLabel, zoomOut }) { z.Alignment = ToolStripItemAlignment.Right; tools.Items.Add(z); }
+            editItems.AddRange(new ToolStripItem[] { zoomOut, zoomLabel, zoomIn, zoomFit });
 
-            canvas.LayoutChanged += delegate { CenterCanvas(); zoomLabel.Text = ((int)Math.Round(canvas.Zoom * 100)) + "%"; };
+            canvas.LayoutChanged += delegate
+            {
+                CenterCanvas();
+                zoomLabel.Text = ((int)Math.Round(canvas.Zoom * 100)) + "%";
+                sizeLabel.Text = canvas.Image == null ? "" : canvas.Image.Width + " × " + canvas.Image.Height + " px";
+            };
             canvas.ColorPicked += delegate(Color c) { UpdateColorButton(); settings.PenColor = c.ToArgb(); settings.Save(); };
             canvas.HistoryChanged += delegate { undoBtn.Enabled = canvas.CanUndo; redoBtn.Enabled = canvas.CanRedo; };
             canvas.MouseWheel += OnCanvasWheel;
@@ -141,16 +163,18 @@ namespace CapturaTela
             scroller.Resize += delegate { CenterCanvas(); };
             canvas.Visible = false;
 
-            placeholder.ForeColor = Color.Gainsboro;
-            placeholder.TextAlign = ContentAlignment.MiddleCenter;
-            placeholder.Font = new Font("Segoe UI", 12);
             placeholder.Dock = DockStyle.Fill;
+            placeholder.NewCapture += delegate { StartCapture(CurrentMode); };
+            placeholder.OpenHelp += delegate { OpenHelp(0); };
             scroller.Controls.Add(placeholder);
             UpdatePlaceholder();
 
             status.Items.Add(statusLabel);
+            status.Items.Add(sizeLabel);
             statusLabel.Text = "Pronto";
-
+            statusLabel.Spring = true; statusLabel.TextAlign = ContentAlignment.MiddleLeft;
+            sizeLabel.Alignment = ToolStripItemAlignment.Right;
+            status.Padding = new Padding((int)(6 * sc), 0, (int)(6 * sc), 0);
             // ordem de inclusao define o encaixe: o ultimo fica mais externo
             Controls.Add(scroller);
             Controls.Add(tools);
@@ -222,22 +246,34 @@ namespace CapturaTela
 
         // ------------------------------------------------------------ Bandeja
 
+        void TrayItem(ContextMenuStrip menu, string text, IconKind icon, EventHandler click)
+        {
+            var item = new ToolStripMenuItem(text);
+            item.Tag = icon;
+            item.Image = Icons.Placeholder(iconSize);
+            item.ImageScaling = ToolStripItemImageScaling.None;
+            item.Padding = new Padding((int)(4 * uiScale), (int)(5 * uiScale), (int)(4 * uiScale), (int)(5 * uiScale));
+            item.Click += click;
+            menu.Items.Add(item);
+        }
+
         void BuildTray()
         {
             var menu = new ContextMenuStrip();
-            menu.Items.Add("Abrir", null, delegate { ShowMain(); });
+            menu.ImageScalingSize = new Size(iconSize, iconSize);
+            TrayItem(menu, "Abrir a Ferramenta de Captura", IconKind.Capture, delegate { ShowMain(); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Capturar retângulo", null, delegate { StartCapture(CaptureMode.Rectangle); });
-            menu.Items.Add("Capturar forma livre", null, delegate { StartCapture(CaptureMode.Freeform); });
-            menu.Items.Add("Capturar janela", null, delegate { StartCapture(CaptureMode.Window); });
-            menu.Items.Add("Capturar tela inteira", null, delegate { StartCapture(CaptureMode.FullScreen); });
-            menu.Items.Add("Captura com rolagem automática", null, delegate { StartCapture(CaptureMode.Scroll); });
-            menu.Items.Add("Captura com rolagem manual", null, delegate { StartCapture(CaptureMode.ScrollManual); });
-            menu.Items.Add("Gravar GIF", null, delegate { StartCapture(CaptureMode.Record); });
+            TrayItem(menu, "Capturar retângulo", IconKind.ModeRect, delegate { StartCapture(CaptureMode.Rectangle); });
+            TrayItem(menu, "Capturar forma livre", IconKind.ModeFree, delegate { StartCapture(CaptureMode.Freeform); });
+            TrayItem(menu, "Capturar janela", IconKind.ModeWindow, delegate { StartCapture(CaptureMode.Window); });
+            TrayItem(menu, "Capturar tela inteira", IconKind.ModeScreen, delegate { StartCapture(CaptureMode.FullScreen); });
+            TrayItem(menu, "Captura com rolagem automática", IconKind.ScrollAuto, delegate { StartCapture(CaptureMode.Scroll); });
+            TrayItem(menu, "Captura com rolagem manual", IconKind.ScrollManual, delegate { StartCapture(CaptureMode.ScrollManual); });
+            TrayItem(menu, "Gravar GIF", IconKind.Gif, delegate { StartCapture(CaptureMode.Record); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Configurações...", null, delegate { ShowMain(); OpenSettings(); });
-            menu.Items.Add("Ajuda", null, delegate { ShowMain(); OpenHelp(0); });
-            menu.Items.Add("Sair", null, delegate { exiting = true; Close(); });
+            TrayItem(menu, "Configurações", IconKind.Settings, delegate { ShowMain(); OpenSettings(); });
+            TrayItem(menu, "Ajuda (F1)", IconKind.Help, delegate { ShowMain(); OpenHelp(0); });
+            TrayItem(menu, "Sair", IconKind.Close, delegate { exiting = true; Close(); });
             tray.ContextMenuStrip = menu;
             tray.Icon = AppIcon.Get(SystemInformation.SmallIconSize);
             tray.Text = "Ferramenta de Captura";
@@ -296,23 +332,58 @@ namespace CapturaTela
 
         void UpdatePlaceholder()
         {
-            placeholder.Text = "Clique em \"+ Novo\" ou pressione " + HotkeyLabel() + " / Ctrl+Shift+S\npara fazer uma captura.\n\nDuvidas? Clique em Ajuda ou aperte F1.";
+            placeholder.SetHotkey(HotkeyLabel());
         }
 
         // ------------------------------------------------------------ Barras
 
-        ToolStripButton Btn(string text, string tip, EventHandler click)
+        // Botao de barra com icone vetorial (desenhado pelo AppRenderer); showText mostra o texto ao lado do icone.
+        ToolStripButton Btn(string text, string tip, EventHandler click, IconKind icon, bool showText)
         {
             var b = new ToolStripButton(text);
             b.ToolTipText = tip;
-            b.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            b.AccessibleName = text;
+            b.Tag = icon;
+            b.Image = Icons.Placeholder(iconSize);
+            b.ImageScaling = ToolStripItemImageScaling.None;
+            b.DisplayStyle = showText ? ToolStripItemDisplayStyle.ImageAndText : ToolStripItemDisplayStyle.Image;
+            b.TextImageRelation = TextImageRelation.ImageBeforeText;
+            Pad(b, showText ? 9 : 5, 7);
             if (click != null) b.Click += click;
             return b;
         }
 
-        void AddTool(string tool, string text, string tip)
+        // margem interna proporcional a escala: botoes de barra com pelo menos 32 px de altura
+        void Pad(ToolStripItem item, int h, int v)
         {
-            var b = Btn(text, tip, null);
+            item.Padding = new Padding((int)(h * uiScale), (int)(v * uiScale), (int)(h * uiScale), (int)(v * uiScale));
+            item.Margin = new Padding((int)(1 * uiScale), (int)(1 * uiScale), (int)(1 * uiScale), (int)(1 * uiScale));
+        }
+
+        ToolStripSeparator Sep()
+        {
+            var s = new ToolStripSeparator();
+            s.Margin = new Padding((int)(4 * uiScale), 0, (int)(4 * uiScale), 0);
+            return s;
+        }
+
+        static IconKind ModeIcon(CaptureMode m)
+        {
+            switch (m)
+            {
+                case CaptureMode.Freeform: return IconKind.ModeFree;
+                case CaptureMode.Window: return IconKind.ModeWindow;
+                case CaptureMode.FullScreen: return IconKind.ModeScreen;
+                case CaptureMode.Scroll: return IconKind.ScrollAuto;
+                case CaptureMode.ScrollManual: return IconKind.ScrollManual;
+                case CaptureMode.Record: return IconKind.Gif;
+                default: return IconKind.ModeRect;
+            }
+        }
+
+        void AddTool(string tool, string tip, IconKind icon)
+        {
+            var b = Btn(tip, tip, null, icon, false);
             b.Click += delegate { SelectTool(tool); };
             toolBtns[tool] = b;
             tools.Items.Add(b);
@@ -360,8 +431,7 @@ namespace CapturaTela
 
         void UpdateColorButton()
         {
-            colorBtn.ForeColor = canvas.PenColor;
-            colorBtn.Text = "■ Cor";
+            colorBtn.ForeColor = canvas.PenColor;   // o icone "Dot" usa a cor do item
         }
 
         void OpenHelp(int topic)

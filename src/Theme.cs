@@ -32,6 +32,15 @@ namespace CapturaTela
         public static readonly Color AccentStrong = Color.FromArgb(0x00, 0x67, 0xC0);
         public static Color AccentText { get { return IsDark ? Color.FromArgb(0x4C, 0xC2, 0xFF) : AccentStrong; } }
 
+        // barras de ferramentas, menus e estados de botao
+        public static Color BarBack { get { return IsDark ? Color.FromArgb(0x2B, 0x2B, 0x2B) : Color.FromArgb(0xF7, 0xF7, 0xF7); } }
+        public static Color BarBorder { get { return IsDark ? Color.FromArgb(0x42, 0x42, 0x42) : Color.FromArgb(0xD6, 0xD6, 0xD6); } }
+        public static Color Hover { get { return IsDark ? Color.FromArgb(0x3C, 0x3C, 0x3C) : Color.FromArgb(0xE6, 0xE6, 0xE6); } }
+        public static Color Pressed { get { return IsDark ? Color.FromArgb(0x48, 0x48, 0x48) : Color.FromArgb(0xD8, 0xD8, 0xD8); } }
+        public static Color MenuBack { get { return IsDark ? Color.FromArgb(0x2B, 0x2B, 0x2B) : Color.White; } }
+        public static Color MenuBorder { get { return IsDark ? Color.FromArgb(0x4A, 0x4A, 0x4A) : Color.FromArgb(0xCC, 0xCC, 0xCC); } }
+        public static Color DisabledInk { get { return IsDark ? Color.FromArgb(0x78, 0x78, 0x78) : Color.FromArgb(0x9A, 0x9A, 0x9A); } }
+
         [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
         public static bool IsDark
@@ -80,6 +89,7 @@ namespace CapturaTela
         {
             foreach (Control child in c.Controls)
             {
+                if (child is EmptyState) continue;   // desenha as proprias cores (fica sobre o fundo escuro da area de edicao)
                 var btn = child as Button;
                 var txt = child as TextBox;
                 var cmb = child as ComboBox;
@@ -116,70 +126,27 @@ namespace CapturaTela
             }
         }
 
+        // Barras, menus e botoes de barra usam o AppRenderer (cantos arredondados, icones e estados do tema).
         public static void Apply(ToolStrip strip, bool dark)
         {
-            strip.RenderMode = ToolStripRenderMode.Professional;
-            if (dark)
-            {
-                strip.Renderer = new ToolStripProfessionalRenderer(new DarkColors());
-                strip.BackColor = DarkPanel; strip.ForeColor = DarkText;
-            }
-            else
-            {
-                strip.Renderer = new ToolStripProfessionalRenderer();
-                strip.BackColor = SystemColors.Control; strip.ForeColor = SystemColors.ControlText;
-            }
+            strip.Renderer = new AppRenderer();
+            strip.BackColor = strip is ToolStripDropDown ? MenuBack : BarBack;
+            strip.ForeColor = Ink;
             foreach (ToolStripItem item in strip.Items)
             {
-                if (item is ToolStripSeparator) continue;
-                var combo = item as ToolStripComboBox;
-                if (combo != null)
+                var dd = item as ToolStripDropDownItem;
+                if (dd != null && dd.HasDropDownItems)
                 {
-                    combo.ComboBox.FlatStyle = dark ? FlatStyle.Flat : FlatStyle.Standard;
-                    combo.BackColor = dark ? DarkBack : SystemColors.Window;
-                    combo.ForeColor = dark ? DarkText : SystemColors.WindowText;
+                    dd.DropDown.Renderer = strip.Renderer;
+                    dd.DropDown.BackColor = MenuBack;
+                    dd.DropDown.ForeColor = Ink;
+                    foreach (ToolStripItem sub in dd.DropDownItems) sub.ForeColor = Ink;
                 }
-                else if (!(item is ToolStripButton && item.ForeColor != SystemColors.ControlText && item.ForeColor != DarkText))
-                {
-                    item.ForeColor = dark ? DarkText : SystemColors.ControlText;
-                }
+                if (!(item is ToolStripSeparator) && item.Tag == null) item.ForeColor = Ink;
             }
         }
-
-        class DarkColors : ProfessionalColorTable
-        {
-            public override Color ToolStripGradientBegin { get { return DarkPanel; } }
-            public override Color ToolStripGradientMiddle { get { return DarkPanel; } }
-            public override Color ToolStripGradientEnd { get { return DarkPanel; } }
-            public override Color ToolStripBorder { get { return DarkBorder; } }
-            public override Color ToolStripDropDownBackground { get { return DarkPanel; } }
-            public override Color MenuItemSelected { get { return Color.FromArgb(70, 70, 70); } }
-            public override Color MenuItemBorder { get { return DarkBorder; } }
-            public override Color MenuItemSelectedGradientBegin { get { return Color.FromArgb(70, 70, 70); } }
-            public override Color MenuItemSelectedGradientEnd { get { return Color.FromArgb(70, 70, 70); } }
-            public override Color ImageMarginGradientBegin { get { return DarkPanel; } }
-            public override Color ImageMarginGradientMiddle { get { return DarkPanel; } }
-            public override Color ImageMarginGradientEnd { get { return DarkPanel; } }
-            public override Color SeparatorDark { get { return DarkBorder; } }
-            public override Color SeparatorLight { get { return DarkBorder; } }
-            public override Color ButtonSelectedHighlight { get { return Color.FromArgb(75, 75, 75); } }
-            public override Color ButtonSelectedGradientBegin { get { return Color.FromArgb(75, 75, 75); } }
-            public override Color ButtonSelectedGradientMiddle { get { return Color.FromArgb(75, 75, 75); } }
-            public override Color ButtonSelectedGradientEnd { get { return Color.FromArgb(75, 75, 75); } }
-            public override Color ButtonSelectedBorder { get { return DarkBorder; } }
-            public override Color ButtonPressedGradientBegin { get { return Accent; } }
-            public override Color ButtonPressedGradientMiddle { get { return Accent; } }
-            public override Color ButtonPressedGradientEnd { get { return Accent; } }
-            public override Color ButtonPressedBorder { get { return Accent; } }
-            public override Color ButtonCheckedGradientBegin { get { return Color.FromArgb(0, 95, 170); } }
-            public override Color ButtonCheckedGradientMiddle { get { return Color.FromArgb(0, 95, 170); } }
-            public override Color ButtonCheckedGradientEnd { get { return Color.FromArgb(0, 95, 170); } }
-            public override Color ButtonCheckedHighlight { get { return Color.FromArgb(0, 95, 170); } }
-            public override Color CheckBackground { get { return Color.FromArgb(0, 95, 170); } }
-            public override Color StatusStripGradientBegin { get { return DarkPanel; } }
-            public override Color StatusStripGradientEnd { get { return DarkPanel; } }
-        }
     }
+
 
     // Icone do aplicativo, embutido no .exe como recurso "icon.ico".
     static class AppIcon
