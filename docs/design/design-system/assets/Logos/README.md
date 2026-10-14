@@ -1,0 +1,1 @@
+`app-icon.png` é o ícone do aplicativo, extraído do quadro de 256 px de `assets/icon.ico` do repositório, sem alterações: um visor azul com ponto central, sobre fundo transparente. Use-o na barra de título, na bandeja e no cabeçalho de documentos do app. Tem várias cores e não herda `ink`; mostre-o com `<img>` sobre `surface` ou `surface-raised`, nos dois temas.
