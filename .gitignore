@@ -3,3 +3,6 @@
 *.pdb
 bin/
 obj/
+
+# Configuracoes locais
+*.ini

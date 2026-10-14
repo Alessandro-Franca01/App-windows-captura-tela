@@ -8,6 +8,10 @@ Clone portatil da Ferramenta de Recorte do Windows, em um unico `.exe` (~25 KB),
 - Atalhos globais: `Print Screen` e `Ctrl+Shift+S`
 - Editor: caneta, marca-texto, borracha, cor, espessura e desfazer
 - Copia para a area de transferencia automaticamente; salva em PNG, JPG, BMP ou GIF
+- Fica na bandeja do sistema (fechar a janela nao encerra o app) com menu de captura rapida
+- Salvamento automatico de cada captura em uma pasta (PNG/JPG)
+- Atalho global configuravel e opcao de iniciar com o Windows (/tray)
+- Configuracoes lembradas entre execucoes em CapturaTela.ini (ao lado do .exe)
 
 ## Compilar
 ```
@@ -24,5 +28,6 @@ Gera `CapturaTela.exe` na raiz. Nao precisa de SDK, apenas do `csc.exe` que acom
 | Esc ou clique direito | Cancelar selecao |
 
 ## Estrutura
-- `src/CapturaTela.cs` - codigo-fonte completo
+- `src/` - codigo-fonte (Native, OverlayForm, Canvas, Settings, SettingsForm, MainForm, Program)
 - `build.bat` - script de compilacao
+
