@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -79,7 +79,7 @@ $result = Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult]
                         string output = p.StandardOutput.ReadToEnd();
                         errTask.Join();
                         if (!p.WaitForExit(60000)) { try { p.Kill(); } catch { } error = "Tempo esgotado no OCR."; }
-                        else if (p.ExitCode == 2) error = "Nenhum idioma de OCR instalado. Instale um em Configuracoes > Hora e idioma > Idioma e regiao.";
+                        else if (p.ExitCode == 2) error = "Nenhum idioma de OCR instalado. Instale um em Configurações > Hora e idioma > Idioma e região.";
                         else if (p.ExitCode != 0) error = string.IsNullOrEmpty(err) ? "Falha no OCR." : err.Trim();
                         else text = output.Trim();
                     }

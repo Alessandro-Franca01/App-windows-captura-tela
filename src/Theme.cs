@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -18,6 +18,19 @@ namespace CapturaTela
         public static readonly Color DarkBorder = Color.FromArgb(80, 80, 80);
         public static readonly Color DarkText = Color.FromArgb(240, 240, 240);
         public static readonly Color Accent = Color.FromArgb(0, 120, 215);
+
+        // ---- tokens semanticos (docs/design/design-system/tokens.json); mudam com o tema ----
+        // Os valores de contraste foram ajustados para pelo menos 4,5:1 sobre a superficie do tema.
+        public static Color Surface { get { return IsDark ? DarkBack : SystemColors.Control; } }
+        public static Color SurfaceRaised { get { return IsDark ? DarkPanel : SystemColors.Window; } }
+        public static Color Ink { get { return IsDark ? DarkText : SystemColors.ControlText; } }
+        public static Color Muted { get { return IsDark ? Color.FromArgb(0xA8, 0xA8, 0xA8) : Color.FromArgb(0x59, 0x59, 0x59); } }
+        public static Color Success { get { return IsDark ? Color.FromArgb(0x4C, 0xC3, 0x8A) : Color.FromArgb(0x18, 0x73, 0x3F); } }
+        public static Color Danger { get { return IsDark ? Color.FromArgb(0xFF, 0x7B, 0x72) : Color.FromArgb(0xA6, 0x1C, 0x1C); } }
+        public static Color Warning { get { return IsDark ? Color.FromArgb(0xFC, 0xCF, 0x4A) : Color.FromArgb(0x7A, 0x52, 0x00); } }
+        // azul para botoes cheios com texto branco (5,7:1) e para links/foco sobre o tema escuro
+        public static readonly Color AccentStrong = Color.FromArgb(0x00, 0x67, 0xC0);
+        public static Color AccentText { get { return IsDark ? Color.FromArgb(0x4C, 0xC2, 0xFF) : AccentStrong; } }
 
         [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
@@ -88,6 +101,11 @@ namespace CapturaTela
                     cmb.FlatStyle = dark ? FlatStyle.Flat : FlatStyle.Standard;
                     cmb.BackColor = dark ? DarkPanel : SystemColors.Window;
                     cmb.ForeColor = dark ? DarkText : SystemColors.WindowText;
+                }
+                else if (child is ListView)
+                {
+                    child.BackColor = dark ? DarkPanel : SystemColors.Window;
+                    child.ForeColor = dark ? DarkText : SystemColors.WindowText;
                 }
                 else if (!(child is Canvas))
                 {

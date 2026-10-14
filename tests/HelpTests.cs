@@ -1,4 +1,4 @@
-// Testes da ajuda (src\HelpForm.cs): o guia docs\GUIA.md vai embutido e vira os topicos da janela.
+﻿// Testes da ajuda (src\HelpForm.cs): o guia docs\GUIA.md vai embutido e vira os topicos da janela.
 using System;
 using System.Windows.Forms;
 
@@ -19,7 +19,7 @@ namespace CapturaTela.Tests
                     Assert.True(t.Body.IndexOf("**", StringComparison.Ordinal) < 0 && t.Body.IndexOf('`') < 0, "marcacao sobrando em: " + t.Title);
                     all += t.Title + "|";
                 }
-                foreach (string must in new[] { "Comecando", "Modos de captura", "Rolagem", "Atalhos", "Problemas comuns" })
+                foreach (string must in new[] { "Começando", "Modos de captura", "Rolagem", "Atalhos", "Problemas comuns" })
                     Assert.True(all.IndexOf(must, StringComparison.OrdinalIgnoreCase) >= 0, "falta o topico " + must);
             });
 
@@ -32,7 +32,7 @@ namespace CapturaTela.Tests
                 Assert.True(t[0].Body.Contains("• item a") && t[0].Body.Contains("• item b"), "listas");
                 Assert.True(t[0].Body.IndexOf("intro ignorada", StringComparison.Ordinal) < 0, "introducao fica de fora");
                 var none = HelpContent.Parse(null);
-                Assert.True(none.Count == 1 && none[0].Body.Contains("nao foi encontrado"), "aviso sem guia");
+                Assert.True(none.Count == 1 && none[0].Body.Contains("não foi encontrado"), "aviso sem guia");
             });
 
             TestRunner.Run("ajuda: a janela mostra o topico escolhido e troca ao selecionar outro", delegate

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -38,14 +38,14 @@ namespace CapturaTela
             ShowInTaskbar = false;
             TopMost = true;
             StartPosition = FormStartPosition.Manual;
-            ClientSize = new Size(300, 62);
+            ClientSize = new Size(320, 84);
             Font = new Font("Segoe UI", 9);
             KeyPreview = true;
 
             info.Text = "Pronto para gravar (" + region.Width + " x " + region.Height + ")";
-            info.Left = 10; info.Top = 8; info.Width = 280;
-            startBtn.Text = "● Iniciar"; startBtn.ForeColor = Color.Firebrick; startBtn.Left = 10; startBtn.Top = 28; startBtn.Width = 140;
-            cancelBtn.Text = "Cancelar"; cancelBtn.Left = 158; cancelBtn.Top = 28; cancelBtn.Width = 130;
+            info.Left = 12; info.Top = 10; info.Width = 296; info.Height = 22;
+            startBtn.Text = "● Iniciar"; startBtn.Left = 12; startBtn.Top = 40; startBtn.Width = 150; startBtn.Height = 32;
+            cancelBtn.Text = "Cancelar"; cancelBtn.Left = 170; cancelBtn.Top = 40; cancelBtn.Width = 138; cancelBtn.Height = 32;
             startBtn.Click += delegate { if (recording) StopRecording(); else StartRecording(); };
             cancelBtn.Click += delegate { Frames.Clear(); DialogResult = DialogResult.Cancel; Close(); };
             Controls.AddRange(new Control[] { info, startBtn, cancelBtn });
@@ -62,6 +62,8 @@ namespace CapturaTela
             int y = below + Height <= wa.Bottom ? below : above >= wa.Top ? above : wa.Bottom - Height - 8;
             Location = new Point(x, y);
             Theme.ScaleForDpi(this);
+            Theme.Apply(this);
+            startBtn.ForeColor = Theme.Danger;   // "● Iniciar": vermelho com contraste e sempre com texto
         }
 
         protected override void OnShown(EventArgs e)

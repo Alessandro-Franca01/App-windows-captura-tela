@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -11,7 +11,7 @@ namespace CapturaTela
 
         TextPrompt()
         {
-            Text = "Texto da anotacao";
+            Text = "Texto da anotação";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
@@ -21,7 +21,7 @@ namespace CapturaTela
             box.Multiline = true; box.AcceptsReturn = true;
             box.Left = 12; box.Top = 12; box.Width = 336; box.Height = 90;
             Controls.Add(box);
-            var hint = new Label { Text = "Enter = nova linha. Ctrl+Enter confirma.", Left = 12, Top = 112, Width = 220, ForeColor = SystemColors.GrayText };
+            var hint = new Label { Text = "Enter = nova linha. Ctrl+Enter confirma.", Left = 12, Top = 112, Width = 220, ForeColor = Theme.Muted };
             Controls.Add(hint);
             var ok = new Button { Text = "OK", Left = 273, Top = 112, Width = 75, DialogResult = DialogResult.OK };
             Controls.Add(ok);

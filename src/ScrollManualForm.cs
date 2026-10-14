@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
@@ -30,14 +30,14 @@ namespace CapturaTela
             ShowInTaskbar = false;
             TopMost = true;
             StartPosition = FormStartPosition.Manual;
-            ClientSize = new Size(420, 108);
+            ClientSize = new Size(420, 112);
             Font = new Font("Segoe UI", 9);
             KeyPreview = true;
 
             info.Left = 12; info.Top = 10; info.Width = 396; info.Height = 20; info.Font = new Font("Segoe UI Semibold", 9.5f);
-            hint.Left = 12; hint.Top = 32; hint.Width = 396; hint.Height = 34; hint.ForeColor = Color.FromArgb(140, 140, 140);
-            doneBtn.Text = "Concluir"; doneBtn.Left = 12; doneBtn.Top = 70; doneBtn.Width = 120; doneBtn.Height = 28;
-            cancelBtn.Text = "Cancelar"; cancelBtn.Left = 140; cancelBtn.Top = 70; cancelBtn.Width = 100; cancelBtn.Height = 28;
+            hint.Left = 12; hint.Top = 32; hint.Width = 396; hint.Height = 34; hint.ForeColor = Theme.Muted;
+            doneBtn.Text = "Concluir"; doneBtn.Left = 12; doneBtn.Top = 72; doneBtn.Width = 130; doneBtn.Height = 32;
+            cancelBtn.Text = "Cancelar"; cancelBtn.Left = 150; cancelBtn.Top = 72; cancelBtn.Width = 110; cancelBtn.Height = 32;
             doneBtn.Click += delegate { Finish(true); };
             cancelBtn.Click += delegate { Finish(false); };
             Controls.AddRange(new Control[] { info, hint, doneBtn, cancelBtn });
@@ -48,7 +48,7 @@ namespace CapturaTela
             timer.Tick += delegate { Tick(); };
             Theme.ScaleForDpi(this);
             Theme.Apply(this);
-            hint.ForeColor = Color.FromArgb(140, 140, 140);
+            hint.ForeColor = Theme.Muted;
             UpdateInfo();
         }
 
@@ -100,11 +100,11 @@ namespace CapturaTela
             info.Text = "Capturado: " + session.Height + " px de altura";
             switch (session.State)
             {
-                case ScrollState.Moving: hint.Text = "Aguardando o conteudo parar de se mexer..."; break;
+                case ScrollState.Moving: hint.Text = "Aguardando o conteúdo parar de se mexer..."; break;
                 case ScrollState.Captured: hint.Text = "Trecho novo capturado. Continue rolando para baixo."; break;
-                case ScrollState.Above: hint.Text = "Voce voltou para cima: role para baixo ate passar do que ja foi capturado."; break;
-                case ScrollState.Lost: hint.Text = "Rolou demais de uma vez e perdi o encaixe. Volte um pouco para cima, ate ver de novo a parte ja capturada."; break;
-                default: hint.Text = "Role o conteudo com a roda do mouse, devagar. Clique em Concluir (ou use o atalho) no fim."; break;
+                case ScrollState.Above: hint.Text = "Você voltou para cima: role para baixo até passar do que já foi capturado."; break;
+                case ScrollState.Lost: hint.Text = "Rolou demais de uma vez e perdi o encaixe. Volte um pouco para cima, até ver de novo a parte já capturada."; break;
+                default: hint.Text = "Role o conteúdo com a roda do mouse, devagar. Clique em Concluir (ou use o atalho) no fim."; break;
             }
         }
 

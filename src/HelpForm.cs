@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -34,7 +34,7 @@ namespace CapturaTela
             var topics = new List<HelpTopic>();
             if (string.IsNullOrEmpty(markdown))
             {
-                topics.Add(new HelpTopic { Title = "Ajuda", Body = "O guia nao foi encontrado neste executavel. Consulte o arquivo docs\\GUIA.md do projeto." });
+                topics.Add(new HelpTopic { Title = "Ajuda", Body = "O guia não foi encontrado neste executável. Consulte o arquivo docs\\GUIA.md do projeto." });
                 return topics;
             }
 

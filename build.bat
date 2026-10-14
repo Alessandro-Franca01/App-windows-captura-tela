@@ -10,8 +10,8 @@ set CSC="%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 set REFS=/r:System.Windows.Forms.dll /r:System.Drawing.dll
 set ICON=/win32icon:assets\icon.ico /resource:assets\icon.ico,icon.ico /resource:docs\GUIA.md,guia.md
 
-%CSC% /nologo /target:winexe /optimize+ /out:CapturaTela.exe %ICON% %REFS% src\*.cs
+%CSC% /nologo /codepage:65001 /target:winexe /optimize+ /out:CapturaTela.exe %ICON% %REFS% src\*.cs
 if errorlevel 1 (echo Falha na compilacao de CapturaTela.exe. & exit /b 1)
-%CSC% /nologo /target:exe /define:CLI /optimize+ /out:CapturaTelaCli.exe %ICON% %REFS% src\*.cs
+%CSC% /nologo /codepage:65001 /target:exe /define:CLI /optimize+ /out:CapturaTelaCli.exe %ICON% %REFS% src\*.cs
 if errorlevel 1 (echo Falha na compilacao de CapturaTelaCli.exe. & exit /b 1)
 echo OK: CapturaTela.exe e CapturaTelaCli.exe gerados.

@@ -1,9 +1,9 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 Guia para agentes (LLMs) e pessoas que mexem neste repositorio. Leia antes de editar.
 
 ## O que e
-Clone portatil da Ferramenta de Recorte do Windows: um unico `CapturaTela.exe` em C# (WinForms), sem dependencias alem do .NET Framework 4 que ja vem no Windows 10/11. Interface e textos em portugues (sem acentos no codigo-fonte e nas strings, para evitar problemas de codificacao no `csc`).
+Clone portatil da Ferramenta de Recorte do Windows: um unico `CapturaTela.exe` em C# (WinForms), sem dependencias alem do .NET Framework 4 que ja vem no Windows 10/11. Interface e textos em portugues **com acentos** (os `.bat` compilam com `/codepage:65001`, entao o fonte pode ser UTF-8; use a grafia correta nas strings que o usuario ve). Nomes de arquivos gerados (ex.: `Captura ....png`) e o JSON da CLI continuam ASCII.
 
 ## Comandos
 | Tarefa | Comando |
