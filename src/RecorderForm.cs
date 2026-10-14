@@ -133,7 +133,7 @@ namespace CapturaTela
         }
 
         // ponteiro do mouse (o GDI nao o inclui na copia de tela)
-        static void DrawPointer(Graphics g, int x, int y)
+        internal static void DrawPointer(Graphics g, int x, int y)
         {
             var pts = new Point[] { new Point(x, y), new Point(x, y + 17), new Point(x + 4, y + 13), new Point(x + 8, y + 20), new Point(x + 11, y + 19), new Point(x + 7, y + 12), new Point(x + 12, y + 12) };
             g.SmoothingMode = SmoothingMode.AntiAlias;

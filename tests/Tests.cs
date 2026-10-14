@@ -42,18 +42,12 @@ namespace CapturaTela.Tests
             ScrollTests.Register();
             SettingsTests.Register();
             OcrTests.Register();
-            foreach (var reg in ExtraSuites.All) reg();
+            CliTests.Register();
 
             Console.WriteLine();
             Console.WriteLine("Resultado: " + passed + " ok, " + failed + " falhas, " + skipped + " pulados");
             return failed == 0 ? 0 : 1;
         }
-    }
-
-    // Suites adicionais registram-se aqui (a CLI adiciona as dela).
-    static class ExtraSuites
-    {
-        public static readonly List<Action> All = new List<Action>();
     }
 
     static class Helpers
