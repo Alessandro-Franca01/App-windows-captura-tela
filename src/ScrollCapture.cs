@@ -13,7 +13,9 @@ namespace CapturaTela
     {
         const int MaxSteps = 60;
 
-        public static Bitmap Run(Rectangle region)
+        public static Bitmap Run(Rectangle region) { return Run(region, MaxSteps); }
+
+        public static Bitmap Run(Rectangle region, int maxSteps)
         {
             var frames = new List<Bitmap>();
             var saved = Cursor.Position;
@@ -26,7 +28,7 @@ namespace CapturaTela
                 hashes.Add(RowHashes(frames[0]));
                 var shifts = new List<int>();
 
-                for (int step = 0; step < MaxSteps; step++)
+                for (int step = 0; step < maxSteps; step++)
                 {
                     if ((Native.GetAsyncKeyState(Native.VK_ESCAPE) & 0x8000) != 0) break;
                     Native.mouse_event(Native.MOUSEEVENTF_WHEEL, 0, 0, -120 * 3, UIntPtr.Zero);

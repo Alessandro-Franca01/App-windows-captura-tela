@@ -23,7 +23,8 @@ O `csc` 4.0 so entende C# 5. **Nao use**: `?.`, `??=`, `$"..."` (interpolacao), 
 ## Estrutura (`src/`)
 | Arquivo | Papel |
 |---|---|
-| `Program.cs` | `Main`, instancia unica (mutex), argumento `/tray` |
+| `Program.cs` | `Main`, instancia unica (mutex), argumento `/tray`; qualquer outro argumento vai para a CLI |
+| `Cli.cs` + `Json.cs` | Interface de linha de comando (JSON em stdout) |
 | `MainForm.cs` | Janela principal, barras, bandeja, atalhos globais, fluxo de captura |
 | `OverlayForm.cs` | Tela congelada para selecionar a area; barra de modos; lupa |
 | `Canvas.cs` + `Annotations.cs` | Editor: anotacoes, historico desfazer/refazer, zoom, `Flatten()` |
@@ -50,3 +51,18 @@ O `csc` 4.0 so entende C# 5. **Nao use**: `?.`, `??=`, `$"..."` (interpolacao), 
 ## Git
 - Fluxo: uma branch por assunto a partir de `main`, commit em portugues no imperativo, PR para `main`.
 - `*.exe`, `*.ini` e `build/` estao no `.gitignore`; o `.exe` nao e versionado.
+
+## CLI para agentes
+`CapturaTelaCli.exe` (gerado por `build.bat`) expoe captura, GIF, rolagem, OCR e anotacao por linha de comando, com **uma linha de JSON** em stdout e codigo de saida 0/1/2. Referencia completa em [docs/CLI.md](docs/CLI.md).
+
+```
+CapturaTelaCli.exe info
+CapturaTelaCli.exe windows --filter code
+CapturaTelaCli.exe capture --window "titulo" --max-width 1280 --out a.png
+CapturaTelaCli.exe ocr --image a.png
+CapturaTelaCli.exe annotate --in a.png --out b.png --pixelate 10,10,300,20 --arrow 5,5,100,100
+```
+- A logica fica em `src/Cli.cs`; `Cli.Execute(args, out exit)` devolve o JSON (e o que os testes chamam).
+- Ao adicionar um comando: registre-o no `switch` de `Execute`, documente em `docs/CLI.md` e na ajuda (`Usage`), e cubra em `tests/CliTests.cs`.
+- Capturar a tela revela conteudo do usuario: prefira `--window` a `--fullscreen`, use `--max-width` para enviar imagens e nao deixe capturas fora de `%TEMP%` sem necessidade.
+- `CapturaTelaCli.exe` e compilado com `/define:CLI` (sem argumentos mostra a ajuda em vez de abrir a janela).

@@ -24,11 +24,22 @@ Clone portatil da Ferramenta de Recorte do Windows, em um unico `.exe` (~25 KB),
 ```
 build.bat
 ```
-Gera `CapturaTela.exe` na raiz. Nao precisa de SDK, apenas do `csc.exe` que acompanha o Windows.
+Gera `CapturaTela.exe` (app) e `CapturaTelaCli.exe` (linha de comando) na raiz. Nao precisa de SDK, apenas do `csc.exe` que acompanha o Windows.
+
+## Linha de comando (para scripts e agentes de IA)
+`CapturaTelaCli.exe` captura, grava GIF, rola, faz OCR e anota imagens sem janela, devolvendo JSON em stdout:
+```
+CapturaTelaCli.exe capture --window "meu app" --max-width 1280 --out a.png
+CapturaTelaCli.exe ocr --image a.png
+CapturaTelaCli.exe annotate --in a.png --out b.png --pixelate 10,10,300,20
+```
+Referencia completa em [docs/CLI.md](docs/CLI.md).
 
 ## Testes
-```n test.bat
-```nRoda os testes automatizados (anotacoes, GIF, rolagem, configuracoes, OCR). Veja [CLAUDE.md](CLAUDE.md) para o guia de desenvolvimento.
+```
+test.bat
+```
+Roda os testes automatizados (anotacoes, GIF, rolagem, configuracoes, OCR). Veja [CLAUDE.md](CLAUDE.md) para o guia de desenvolvimento.
 
 ## Atalhos
 | Atalho | Acao |
@@ -53,6 +64,7 @@ Gera `CapturaTela.exe` na raiz. Nao precisa de SDK, apenas do `csc.exe` que acom
 - Captura com rolagem: cabecalhos/rodapes fixos (sticky) do site podem aparecer repetidos; funciona melhor com conteudo que rola por inteiro.
 - Gravacao: somente GIF (sem MP4) e sem audio.
 - OCR: exige ao menos um idioma de OCR instalado no Windows (Configuracoes > Hora e idioma > Idioma e regiao).
+
 
 
 
