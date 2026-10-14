@@ -25,6 +25,7 @@ O `csc` 4.0 so entende C# 5. **Nao use**: `?.`, `??=`, `$"..."` (interpolacao), 
 |---|---|
 | `Program.cs` | `Main`, instancia unica (mutex), argumento `/tray`; qualquer outro argumento vai para a CLI |
 | `Cli.cs` + `Json.cs` | Interface de linha de comando (JSON em stdout); chama `Cli.Gate.Require(...)` antes de cada acao sensivel |
+| `McpServer.cs` + `JsonParser.cs` | Servidor MCP (`CapturaTelaCli.exe mcp`): ferramentas = comandos da CLI |
 | `Permissions.cs` | Arquivo de permissoes, `PromptGate` (uma vez / sempre / negar) |
 | `PermissionDialog.cs` + `PermissionsForm.cs` | Pergunta ao usuario e tela para gerenciar permissoes |
 | `MainForm.cs` | Janela principal, barras, bandeja, atalhos globais, fluxo de captura |
@@ -74,3 +75,9 @@ Toda acao sensivel da CLI passa por `Cli.Gate.Require(chave, chaveSempre, descri
 - Ao criar um comando/ferramenta que le a tela, lista janelas ou mexe em arquivos, **peca a permissao antes do efeito colateral** (antes de ativar uma janela, de capturar ou de escrever).
 - Testes: use `PermissionTests` como modelo (`WithStore` isola o arquivo de permissoes por variavel de ambiente e restaura o gate).
 - O usuario decide; nunca conceda permissoes por conta propria nem edite `CapturaTela.permissoes.ini` sem ele pedir.
+
+## Servidor MCP
+`CapturaTelaCli.exe mcp` ([docs/MCP.md](docs/MCP.md)). Cada ferramenta e um comando da CLI (`McpServer.BuildTools`), chamado por `Cli.Execute` com o `PromptGate`; imagens voltam inline reduzidas.
+- Ao adicionar uma ferramenta: `BuildTools` (parametros e descricao), `docs/MCP.md`, e um teste em `tests/McpTests.cs` (`WithSession` isola permissoes e gate).
+- stdout e o canal do protocolo: **nunca** escreva nada nele fora de `McpServer` (nada de `Console.WriteLine` no modo `mcp`).
+- `McpSession.Handle(linha)` e testavel sem processo filho.

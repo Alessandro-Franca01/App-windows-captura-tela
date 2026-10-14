@@ -81,6 +81,7 @@ namespace CapturaTela
             "  gif <alvo> [--out arq.gif] [--seconds 5] [--fps 10] [--max-width 960] [--cursor]",
             "  scroll <alvo> [--out arq] [--max-steps 60]      rola o conteudo sob a area e costura as imagens",
             "  ocr (<alvo> | --image arq)           reconhece o texto (motor de OCR do Windows)",
+            "  mcp                                  servidor MCP por stdio (para clientes de IA; veja docs/MCP.md)",
             "  annotate --in arq --out arq [operacoes na ordem]",
             "      --color #RRGGBB  --width N        valem para as operacoes seguintes",
             "      --rect x,y,w,h  --ellipse x,y,w,h  --arrow x1,y1,x2,y2  --line x1,y1,x2,y2",
@@ -122,6 +123,7 @@ namespace CapturaTela
 
         public static int Run(string[] args)
         {
+            if (args.Length > 0 && args[0].ToLowerInvariant() == "mcp") return McpServer.RunStdio();
             if (PermissionStore.Load().GateCli)
             {
                 Application.EnableVisualStyles();
