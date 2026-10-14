@@ -24,6 +24,8 @@ namespace CapturaTela
         public Keys HotKey = Keys.PrintScreen;
         public bool CloseToTray = true;
         public bool TrayTipShown;
+        public int Theme;                  // 0 = seguir o Windows, 1 = claro, 2 = escuro
+        public bool Notify = true;
 
         string path;
 
@@ -86,6 +88,8 @@ namespace CapturaTela
                 case "HotMods": if (uint.TryParse(v, NumberStyles.Integer, inv, out u)) HotMods = u; break;
                 case "HotKey": if (int.TryParse(v, NumberStyles.Integer, inv, out n) && n > 0) HotKey = (Keys)n; break;
                 case "CloseToTray": if (bool.TryParse(v, out b)) CloseToTray = b; break;
+                case "Theme": if (int.TryParse(v, NumberStyles.Integer, inv, out n) && n >= 0 && n <= 2) Theme = n; break;
+                case "Notify": if (bool.TryParse(v, out b)) Notify = b; break;
                 case "TrayTipShown": if (bool.TryParse(v, out b)) TrayTipShown = b; break;
             }
         }
@@ -105,6 +109,8 @@ namespace CapturaTela
             sb.AppendLine("HotKey=" + ((int)HotKey).ToString(inv));
             sb.AppendLine("CloseToTray=" + CloseToTray);
             sb.AppendLine("TrayTipShown=" + TrayTipShown);
+            sb.AppendLine("Theme=" + Theme.ToString(inv));
+            sb.AppendLine("Notify=" + Notify);
             try { File.WriteAllText(path, sb.ToString(), Encoding.UTF8); }
             catch { /* sem permissao: ignora, as configuracoes valem so nesta sessao */ }
         }

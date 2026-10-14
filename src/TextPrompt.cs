@@ -30,6 +30,7 @@ namespace CapturaTela
             {
                 if (e.Control && e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; DialogResult = DialogResult.OK; }
             };
+            Theme.Apply(this);
         }
 
         public static string Ask(IWin32Window owner)

@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 [assembly: AssemblyTitle("Ferramenta de Captura")]
 [assembly: AssemblyProduct("Ferramenta de Captura")]
-[assembly: AssemblyVersion("1.1.0.0")]
+[assembly: AssemblyVersion("2.0.0.0")]
 
 namespace CapturaTela
 {
