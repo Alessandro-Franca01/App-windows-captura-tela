@@ -212,7 +212,8 @@ namespace CapturaTela
                 current = e.Location;
                 if (mode == CaptureMode.Freeform)
                 {
-                    freePoints.Add(e.Location);
+                    var lp = freePoints[freePoints.Count - 1];
+                    if (Math.Abs(e.X - lp.X) + Math.Abs(e.Y - lp.Y) >= 4) freePoints.Add(e.Location);   // menos pontos = caminho leve
                     fMinX = Math.Min(fMinX, e.X); fMaxX = Math.Max(fMaxX, e.X); fMinY = Math.Min(fMinY, e.Y); fMaxY = Math.Max(fMaxY, e.Y);
                 }
                 InvalidateSelection();
@@ -259,6 +260,7 @@ namespace CapturaTela
             using (var path = new GraphicsPath())
             {
                 path.AddPolygon(freePoints.ToArray());
+                path.FillMode = FillMode.Winding;
                 var b = Rectangle.Ceiling(path.GetBounds());
                 b.Intersect(new Rectangle(0, 0, shot.Width, shot.Height));
                 if (b.Width < 1 || b.Height < 1) return;
@@ -328,7 +330,7 @@ namespace CapturaTela
 
         void InvalidateLoupe()
         {
-            var r = LoupeRect(); r.Inflate(6, 6);
+            var r = LoupeRect(); r.Height += 14; r.Inflate(12, 12);   // DrawLoupe pinta 14 px alem do painel (sombra incluida)
             var inv = Rectangle.Union(r, lastLoupe);
             lastLoupe = r;
             Invalidate(inv);
@@ -357,10 +359,8 @@ namespace CapturaTela
                 using (var path = new GraphicsPath())
                 {
                     path.AddPolygon(freePoints.ToArray());
-                    var old = g.Clip;
-                    g.SetClip(path, CombineMode.Intersect);
-                    g.DrawImage(bright, clip, clip, GraphicsUnit.Pixel);
-                    g.Clip = old;
+                    path.FillMode = FillMode.Winding;
+                    using (var tb = new TextureBrush(bright)) g.FillPath(tb, path);   // preenche com a captura (recortar por regiao era lento)
                     using (var pen = new Pen(Color.White, 2)) g.DrawPath(pen, path);
                 }
             }
