@@ -1,4 +1,4 @@
-﻿# Ferramenta de Captura (Windows)
+# Ferramenta de Captura (Windows)
 
 Clone portatil da Ferramenta de Recorte do Windows, em um unico `.exe` (~25 KB), sem instalacao e sem dependencias alem do .NET Framework 4 que ja vem no Windows 10/11.
 
@@ -64,7 +64,7 @@ Roda os testes automatizados (anotacoes, GIF, rolagem, configuracoes, OCR). Veja
 
 
 ## Limitacoes conhecidas
-- Captura com rolagem: cabecalhos/rodapes fixos (sticky) do site podem aparecer repetidos; funciona melhor com conteudo que rola por inteiro.
+- Captura com rolagem: cabecalhos, barras de ferramentas e rodapes fixos aparecem uma unica vez; a barra de rolagem da janela pode sair com pequenos defeitos na faixa do lado direito. Conteudo que anima ou muda sozinho (videos, relogios) atrapalha o alinhamento.
 - Gravacao: somente GIF (sem MP4) e sem audio.
 - OCR: exige ao menos um idioma de OCR instalado no Windows (Configuracoes > Hora e idioma > Idioma e regiao).
 

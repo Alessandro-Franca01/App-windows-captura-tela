@@ -91,6 +91,7 @@ namespace CapturaTela
             ok.Click += delegate { Apply(); };
             Controls.Add(ok); Controls.Add(cancel);
             AcceptButton = ok; CancelButton = cancel;
+            Theme.ScaleForDpi(this);
             Theme.Apply(this);
         }
 

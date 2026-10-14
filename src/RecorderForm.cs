@@ -61,6 +61,7 @@ namespace CapturaTela
             int above = region.Top - FrameBorder - 8 - Height;
             int y = below + Height <= wa.Bottom ? below : above >= wa.Top ? above : wa.Bottom - Height - 8;
             Location = new Point(x, y);
+            Theme.ScaleForDpi(this);
         }
 
         protected override void OnShown(EventArgs e)

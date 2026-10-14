@@ -202,6 +202,17 @@ namespace CapturaTela.Tests
                 Assert.True(denyFocused, "foco inicial em Negar");
             });
 
-        }
+
+            TestRunner.Run("permissoes: sem resposta o dialogo fecha sozinho e nega", delegate
+            {
+                var req = new PromptRequest { Client = "Teste", Key = "info", AlwaysKey = "info", Description = "x" };
+                using (var d = new PermissionDialog(req, 0, 2))
+                {
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    d.ShowDialog();   // ninguem clica: deve fechar em ~2 s
+                    Assert.True(sw.ElapsedMilliseconds >= 1500 && sw.ElapsedMilliseconds < 6000, "fechou apos " + sw.ElapsedMilliseconds + " ms");
+                    Assert.Equal(PromptAnswer.Deny, d.Answer, "sem resposta = negar");
+                }
+            });        }
     }
 }
