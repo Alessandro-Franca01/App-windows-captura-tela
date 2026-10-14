@@ -6,3 +6,6 @@ obj/
 
 # Configuracoes locais
 *.ini
+
+# Saida de testes
+build/

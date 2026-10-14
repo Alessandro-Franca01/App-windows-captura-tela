@@ -26,6 +26,10 @@ build.bat
 ```
 Gera `CapturaTela.exe` na raiz. Nao precisa de SDK, apenas do `csc.exe` que acompanha o Windows.
 
+## Testes
+```n test.bat
+```nRoda os testes automatizados (anotacoes, GIF, rolagem, configuracoes, OCR). Veja [CLAUDE.md](CLAUDE.md) para o guia de desenvolvimento.
+
 ## Atalhos
 | Atalho | Acao |
 |---|---|
@@ -49,5 +53,6 @@ Gera `CapturaTela.exe` na raiz. Nao precisa de SDK, apenas do `csc.exe` que acom
 - Captura com rolagem: cabecalhos/rodapes fixos (sticky) do site podem aparecer repetidos; funciona melhor com conteudo que rola por inteiro.
 - Gravacao: somente GIF (sem MP4) e sem audio.
 - OCR: exige ao menos um idioma de OCR instalado no Windows (Configuracoes > Hora e idioma > Idioma e regiao).
+
 
 
