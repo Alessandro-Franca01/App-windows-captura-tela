@@ -13,7 +13,8 @@ namespace CapturaTela
     {
         static readonly string[] ModeNames = { "Retangulo", "Forma livre", "Janela", "Tela inteira", "Rolagem", "Gravar GIF" };
 
-        const int LoupeCells = 15, LoupeScale = 8;
+        // painel mais largo que a lupa para caber "x, y   #RRGGBB" (coordenadas grandes em varios monitores)
+        const int LoupeCells = 15, LoupeScale = 8, LoupePanelW = 196;
 
         readonly Bitmap shot;
         CaptureMode mode;
@@ -256,9 +257,9 @@ namespace CapturaTela
         {
             int size = LoupeCells * LoupeScale;
             int x = mouse.X + 24, y = mouse.Y + 24;
-            if (x + size + 4 > ClientSize.Width) x = mouse.X - 24 - size;
+            if (x + LoupePanelW + 4 > ClientSize.Width) x = mouse.X - 24 - LoupePanelW;
             if (y + size + 40 > ClientSize.Height) y = mouse.Y - 24 - size - 40;
-            return new Rectangle(x, y, size, size + 36);
+            return new Rectangle(x, y, LoupePanelW, size + 36);
         }
 
         bool LoupeVisible
@@ -365,8 +366,9 @@ namespace CapturaTela
 
         void DrawLoupe(Graphics g)
         {
-            var box = LoupeRect();
+            var panel = LoupeRect();
             int size = LoupeCells * LoupeScale;
+            var box = new Rectangle(panel.X + (panel.Width - size) / 2, panel.Y, size, size);   // lupa centralizada no painel
             int half = LoupeCells / 2;
             var src = new Rectangle(mouse.X - half, mouse.Y - half, LoupeCells, LoupeCells);
 
@@ -374,7 +376,7 @@ namespace CapturaTela
             g.InterpolationMode = InterpolationMode.NearestNeighbor;
             g.PixelOffsetMode = PixelOffsetMode.Half;
             g.SmoothingMode = SmoothingMode.None;
-            g.FillRectangle(Brushes.Black, box.X - 2, box.Y - 2, size + 4, size + 40);
+            g.FillRectangle(Brushes.Black, panel.X - 2, panel.Y - 2, panel.Width + 4, panel.Height + 4);
             g.DrawImage(shot, new Rectangle(box.X, box.Y, size, size), src, GraphicsUnit.Pixel);
             g.InterpolationMode = oldI; g.PixelOffsetMode = oldP;
 
@@ -395,9 +397,9 @@ namespace CapturaTela
             using (var f = new Font("Segoe UI", 9))
             using (var sw = new SolidBrush(px))
             {
-                g.FillRectangle(sw, box.X, box.Y + size + 6, 18, 18);
-                g.DrawRectangle(Pens.White, box.X, box.Y + size + 6, 18, 18);
-                g.DrawString(text, f, Brushes.White, box.X + 24, box.Y + size + 7);
+                g.FillRectangle(sw, panel.X + 6, panel.Y + size + 6, 18, 18);
+                g.DrawRectangle(Pens.White, panel.X + 6, panel.Y + size + 6, 18, 18);
+                g.DrawString(text, f, Brushes.White, panel.X + 30, panel.Y + size + 7);
             }
             g.SmoothingMode = oldS;
         }
