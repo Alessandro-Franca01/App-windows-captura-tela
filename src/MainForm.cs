@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -19,10 +20,14 @@ namespace CapturaTela
         bool capturing;
 
         readonly ToolStrip bar = new ToolStrip();
+        readonly ToolStrip tools = new ToolStrip();
         readonly ToolStripComboBox modeBox = new ToolStripComboBox();
         readonly ToolStripComboBox delayBox = new ToolStripComboBox();
         readonly ToolStripComboBox widthBox = new ToolStripComboBox();
-        readonly ToolStripButton penBtn, hlBtn, eraserBtn, colorBtn, copyBtn, saveBtn, undoBtn, newBtn, settingsBtn;
+        readonly Dictionary<string, ToolStripButton> toolBtns = new Dictionary<string, ToolStripButton>();
+        readonly List<ToolStripItem> editItems = new List<ToolStripItem>();
+        readonly ToolStripLabel zoomLabel = new ToolStripLabel("100%");
+        readonly ToolStripButton colorBtn, copyBtn, saveBtn, undoBtn, redoBtn, newBtn, settingsBtn;
         readonly Panel scroller = new Panel();
         readonly Canvas canvas = new Canvas();
         readonly Label placeholder = new Label();
@@ -34,12 +39,13 @@ namespace CapturaTela
         {
             this.startHidden = startHidden;
             Text = "Ferramenta de Captura";
-            ClientSize = new Size(900, 600);
-            MinimumSize = new Size(640, 360);
+            ClientSize = new Size(960, 640);
+            MinimumSize = new Size(700, 400);
             StartPosition = FormStartPosition.CenterScreen;
             Icon = SystemIcons.Application;
             KeyPreview = true;
 
+            // ---- barra principal: captura e acoes ----
             bar.GripStyle = ToolStripGripStyle.Hidden;
             bar.Padding = new Padding(6, 4, 6, 4);
 
@@ -64,30 +70,60 @@ namespace CapturaTela
             bar.Items.Add(delayBox);
 
             bar.Items.Add(new ToolStripSeparator());
-            penBtn = Tool("Caneta", "Caneta", "pen");
-            hlBtn = Tool("Marca-texto", "Marca-texto", "highlighter");
-            eraserBtn = Tool("Borracha", "Borracha (apaga o traco tocado)", "eraser");
-            penBtn.Checked = true;
-            colorBtn = Btn("Cor", "Cor da caneta", delegate { PickColor(); });
-            widthBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            widthBox.Items.AddRange(new object[] { "Fino", "Medio", "Grosso", "Extra grosso" });
-            widthBox.SelectedIndex = settings.PenWidth;
-            widthBox.Width = 90;
-            widthBox.ToolTipText = "Espessura";
-            widthBox.SelectedIndexChanged += delegate { ApplyWidth(); settings.PenWidth = widthBox.SelectedIndex; settings.Save(); };
-            bar.Items.AddRange(new ToolStripItem[] { penBtn, hlBtn, eraserBtn, colorBtn, widthBox });
-            canvas.PenColor = Color.FromArgb(settings.PenColor);
-            UpdateColorButton();
-
-            bar.Items.Add(new ToolStripSeparator());
-            undoBtn = Btn("Desfazer", "Desfazer ultimo traco (Ctrl+Z)", delegate { Undo(); });
+            undoBtn = Btn("Desfazer", "Desfazer (Ctrl+Z)", delegate { canvas.Undo(); });
+            redoBtn = Btn("Refazer", "Refazer (Ctrl+Y)", delegate { canvas.Redo(); });
             copyBtn = Btn("Copiar", "Copiar para a area de transferencia (Ctrl+C)", delegate { CopyImage(true); });
             saveBtn = Btn("Salvar", "Salvar como... (Ctrl+S)", delegate { SaveImage(); });
-            bar.Items.AddRange(new ToolStripItem[] { undoBtn, copyBtn, saveBtn });
+            bar.Items.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn });
+            editItems.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn });
 
             settingsBtn = Btn("Configuracoes", "Atalho, salvamento automatico, bandeja e inicializacao", delegate { OpenSettings(); });
             settingsBtn.Alignment = ToolStripItemAlignment.Right;
             bar.Items.Add(settingsBtn);
+
+            // ---- segunda barra: ferramentas de edicao ----
+            tools.GripStyle = ToolStripGripStyle.Hidden;
+            tools.Padding = new Padding(6, 2, 6, 2);
+            AddTool("pen", "Caneta", "Caneta");
+            AddTool("highlighter", "Marca-texto", "Marca-texto");
+            AddTool("arrow", "Seta", "Seta (Shift = 45 graus)");
+            AddTool("line", "Linha", "Linha (Shift = 45 graus)");
+            AddTool("rect", "Retangulo", "Retangulo (Shift = quadrado)");
+            AddTool("ellipse", "Elipse", "Elipse (Shift = circulo)");
+            AddTool("text", "Texto", "Caixa de texto");
+            AddTool("step", "Passo", "Marcador numerado (1, 2, 3...)");
+            AddTool("blur", "Desfocar", "Desfocar uma area (esconde dados sensiveis)");
+            AddTool("pixelate", "Pixelar", "Pixelar uma area (esconde dados sensiveis)");
+            AddTool("crop", "Cortar", "Cortar a imagem");
+            AddTool("picker", "Conta-gotas", "Pegar uma cor da imagem");
+            AddTool("eraser", "Borracha", "Borracha (apaga a anotacao tocada)");
+            toolBtns["pen"].Checked = true;
+
+            tools.Items.Add(new ToolStripSeparator());
+            colorBtn = Btn("Cor", "Cor das anotacoes", delegate { PickColor(); });
+            widthBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            widthBox.Items.AddRange(new object[] { "Fino", "Medio", "Grosso", "Extra grosso" });
+            widthBox.SelectedIndex = settings.PenWidth;
+            widthBox.Width = 90;
+            widthBox.ToolTipText = "Espessura / tamanho / intensidade";
+            widthBox.SelectedIndexChanged += delegate { ApplyWidth(); settings.PenWidth = widthBox.SelectedIndex; settings.Save(); };
+            tools.Items.AddRange(new ToolStripItem[] { colorBtn, widthBox });
+            editItems.AddRange(new ToolStripItem[] { colorBtn, widthBox });
+            canvas.PenColor = Color.FromArgb(settings.PenColor);
+            UpdateColorButton();
+
+            tools.Items.Add(new ToolStripSeparator());
+            var zoomOut = Btn("-", "Diminuir zoom (Ctrl + roda do mouse)", delegate { canvas.SetZoom(canvas.Zoom / 1.25f); });
+            var zoomIn = Btn("+", "Aumentar zoom (Ctrl + roda do mouse)", delegate { canvas.SetZoom(canvas.Zoom * 1.25f); });
+            var zoom100 = Btn("100%", "Tamanho real", delegate { canvas.SetZoom(1f); });
+            var zoomFit = Btn("Ajustar", "Ajustar a janela", delegate { FitZoom(); });
+            tools.Items.AddRange(new ToolStripItem[] { zoomOut, zoomLabel, zoomIn, zoom100, zoomFit });
+            editItems.AddRange(new ToolStripItem[] { zoomOut, zoomIn, zoom100, zoomFit });
+
+            canvas.LayoutChanged += delegate { CenterCanvas(); zoomLabel.Text = ((int)Math.Round(canvas.Zoom * 100)) + "%"; };
+            canvas.ColorPicked += delegate(Color c) { UpdateColorButton(); settings.PenColor = c.ToArgb(); settings.Save(); };
+            canvas.HistoryChanged += delegate { undoBtn.Enabled = canvas.CanUndo; redoBtn.Enabled = canvas.CanRedo; };
+            canvas.MouseWheel += OnCanvasWheel;
 
             scroller.Dock = DockStyle.Fill;
             scroller.AutoScroll = true;
@@ -106,7 +142,9 @@ namespace CapturaTela
             status.Items.Add(statusLabel);
             statusLabel.Text = "Pronto";
 
+            // ordem de inclusao define o encaixe: o ultimo fica mais externo
             Controls.Add(scroller);
+            Controls.Add(tools);
             Controls.Add(bar);
             Controls.Add(status);
             ApplyWidth();
@@ -184,36 +222,37 @@ namespace CapturaTela
             placeholder.Text = "Clique em \"+ Novo\" ou pressione " + HotkeyLabel() + " / Ctrl+Shift+S\npara fazer uma captura.";
         }
 
-        // ------------------------------------------------------------ Barra
+        // ------------------------------------------------------------ Barras
 
         ToolStripButton Btn(string text, string tip, EventHandler click)
         {
             var b = new ToolStripButton(text);
             b.ToolTipText = tip;
             b.DisplayStyle = ToolStripItemDisplayStyle.Text;
-            b.Click += click;
+            if (click != null) b.Click += click;
             return b;
         }
 
-        ToolStripButton Tool(string text, string tip, string tool)
+        void AddTool(string tool, string text, string tip)
         {
             var b = Btn(text, tip, null);
-            b.CheckOnClick = false;
-            b.Click += delegate
-            {
-                canvas.Tool = tool;
-                penBtn.Checked = tool == "pen";
-                hlBtn.Checked = tool == "highlighter";
-                eraserBtn.Checked = tool == "eraser";
-                canvas.Cursor = tool == "eraser" ? Cursors.No : Cursors.Cross;
-            };
-            return b;
+            b.Click += delegate { SelectTool(tool); };
+            toolBtns[tool] = b;
+            tools.Items.Add(b);
+            editItems.Add(b);
+        }
+
+        void SelectTool(string tool)
+        {
+            canvas.Tool = tool;
+            foreach (var kv in toolBtns) kv.Value.Checked = kv.Key == tool;
+            canvas.Cursor = tool == "eraser" ? Cursors.No : tool == "picker" ? Cursors.Hand : tool == "text" ? Cursors.IBeam : Cursors.Cross;
         }
 
         void SetEditEnabled(bool on)
         {
-            foreach (var b in new ToolStripItem[] { penBtn, hlBtn, eraserBtn, colorBtn, widthBox, undoBtn, copyBtn, saveBtn })
-                b.Enabled = on;
+            foreach (var b in editItems) b.Enabled = on;
+            if (on) { undoBtn.Enabled = canvas.CanUndo; redoBtn.Enabled = canvas.CanRedo; }
         }
 
         void CenterCanvas()
@@ -260,6 +299,29 @@ namespace CapturaTela
             }
         }
 
+        void OnCanvasWheel(object sender, MouseEventArgs e)
+        {
+            var he = e as HandledMouseEventArgs;
+            if (he != null) he.Handled = true;
+            if ((ModifierKeys & Keys.Control) == Keys.Control)
+            {
+                canvas.SetZoom(e.Delta > 0 ? canvas.Zoom * 1.25f : canvas.Zoom / 1.25f);
+                return;
+            }
+            var pos = new Point(-scroller.AutoScrollPosition.X, -scroller.AutoScrollPosition.Y);
+            if ((ModifierKeys & Keys.Shift) == Keys.Shift) pos.X -= e.Delta; else pos.Y -= e.Delta;
+            scroller.AutoScrollPosition = pos;
+            CenterCanvas();
+        }
+
+        void FitZoom()
+        {
+            if (canvas.Image == null) return;
+            float zx = (scroller.ClientSize.Width - 20f) / canvas.Image.Width;
+            float zy = (scroller.ClientSize.Height - 20f) / canvas.Image.Height;
+            canvas.SetZoom(Math.Min(zx, zy));
+        }
+
         // ------------------------------------------------------------ Atalhos globais
 
         protected override void OnHandleCreated(EventArgs e)
@@ -297,7 +359,8 @@ namespace CapturaTela
             if (e.Control && e.KeyCode == Keys.N) { StartCapture(modeBox.SelectedIndex); e.Handled = true; }
             else if (e.Control && e.KeyCode == Keys.S) { if (canvas.Image != null) SaveImage(); e.Handled = true; }
             else if (e.Control && e.KeyCode == Keys.C) { if (canvas.Image != null) CopyImage(true); e.Handled = true; }
-            else if (e.Control && e.KeyCode == Keys.Z) { Undo(); e.Handled = true; }
+            else if (e.Control && e.KeyCode == Keys.Z) { canvas.Undo(); e.Handled = true; }
+            else if (e.Control && e.KeyCode == Keys.Y) { canvas.Redo(); e.Handled = true; }
             base.OnKeyDown(e);
         }
 
@@ -403,13 +466,6 @@ namespace CapturaTela
         }
 
         // ------------------------------------------------------------ Acoes
-
-        void Undo()
-        {
-            if (canvas.Strokes.Count == 0) return;
-            canvas.Strokes.RemoveAt(canvas.Strokes.Count - 1);
-            canvas.Invalidate();
-        }
 
         void CopyImage(bool announce)
         {
