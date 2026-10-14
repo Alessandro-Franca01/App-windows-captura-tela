@@ -82,6 +82,10 @@ namespace CapturaTela
             themeBox.Left = 70; themeBox.Top = y; themeBox.Width = 160;
             Controls.Add(themeBox);
 
+            var perms = new Button { Text = "Permissoes da IA...", Left = 16, Top = 302, Width = 150 };
+            perms.Click += delegate { using (var f = new PermissionsForm()) f.ShowDialog(this); };
+            Controls.Add(perms);
+
             var ok = new Button { Text = "OK", Left = 268, Top = 302, Width = 75, DialogResult = DialogResult.OK };
             var cancel = new Button { Text = "Cancelar", Left = 349, Top = 302, Width = 75, DialogResult = DialogResult.Cancel };
             ok.Click += delegate { Apply(); };

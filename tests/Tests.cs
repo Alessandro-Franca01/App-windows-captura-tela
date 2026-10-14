@@ -43,6 +43,7 @@ namespace CapturaTela.Tests
             SettingsTests.Register();
             OcrTests.Register();
             CliTests.Register();
+            PermissionTests.Register();
 
             Console.WriteLine();
             Console.WriteLine("Resultado: " + passed + " ok, " + failed + " falhas, " + skipped + " pulados");

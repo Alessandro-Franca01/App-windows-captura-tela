@@ -52,10 +52,13 @@ namespace CapturaTela
             return s;
         }
 
-        static string ResolvePath()
+        static string ResolvePath() { return DataFile("CapturaTela.ini"); }
+
+        // Arquivo de dados do app: ao lado do .exe; se a pasta for somente leitura, em %APPDATA%\CapturaTela.
+        public static string DataFile(string fileName)
         {
             string dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string local = Path.Combine(dir, "CapturaTela.ini");
+            string local = Path.Combine(dir, fileName);
             if (File.Exists(local)) return local;
             try
             {
@@ -68,7 +71,7 @@ namespace CapturaTela
             {
                 string app = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CapturaTela");
                 Directory.CreateDirectory(app);
-                return Path.Combine(app, "CapturaTela.ini");
+                return Path.Combine(app, fileName);
             }
         }
 

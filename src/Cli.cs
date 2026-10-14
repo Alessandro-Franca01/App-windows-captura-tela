@@ -70,7 +70,7 @@ namespace CapturaTela
     {
         static readonly string[] Usage =
         {
-            "CapturaTelaCli <comando> [opcoes]   (saida: uma linha de JSON; codigo 0 ok, 1 erro, 2 uso incorreto)",
+            "CapturaTelaCli <comando> [opcoes]   (saida: uma linha de JSON; codigo 0 ok, 1 erro, 2 uso incorreto, 3 permissao negada)",
             "",
             "Alvos (use exatamente um):  --fullscreen | --screen N | --region x,y,w,h | --window \"titulo ou processo\" | --active",
             "",
@@ -91,8 +91,44 @@ namespace CapturaTela
             "Sem --out, os arquivos vao para %TEMP%\\CapturaTela."
         };
 
+        // Controla o que o chamador pode fazer. Padrao: tudo (a CLI e do proprio usuario).
+        // O servidor MCP e a opcao "exigir permissao na CLI" trocam por um PromptGate.
+        public static IPermissionGate Gate = new AllowAllGate();
+
+        static void NeedScreen(string why)
+        {
+            Gate.Require("target:screen", "target:screen", "Capturar a tela: " + why);
+        }
+
+        static void NeedRead(string path)
+        {
+            string full = Path.GetFullPath(path);
+            if (IsInside(OutputDir(), full)) return;   // arquivos que o proprio app gerou
+            Gate.Require("file:read:" + full, "file:read:" + Path.GetDirectoryName(full) + "\\*", "Ler o arquivo " + full);
+        }
+
+        static void NeedWrite(string path)
+        {
+            string full = Path.GetFullPath(path);
+            if (IsInside(OutputDir(), full)) return;
+            Gate.Require("file:write:" + full, "file:write:" + Path.GetDirectoryName(full) + "\\*", "Gravar o arquivo " + full);
+        }
+
+        static bool IsInside(string dir, string path)
+        {
+            string d = Path.GetFullPath(dir).TrimEnd('\\') + "\\";
+            return path.StartsWith(d, StringComparison.OrdinalIgnoreCase);
+        }
+
         public static int Run(string[] args)
         {
+            if (PermissionStore.Load().GateCli)
+            {
+                Application.EnableVisualStyles();
+                var g = new PromptGate(PermissionDialog.Ask);
+                g.Client = "Um programa de linha de comando";
+                Gate = g;
+            }
             int code;
             string json = Execute(args, out code);
             var bytes = new UTF8Encoding(false).GetBytes(json + "\n");
@@ -125,13 +161,15 @@ namespace CapturaTela
                 var result = new JObj().Add("ok", true).Add("command", a.Command == "" ? "help" : a.Command);
                 return Merge(result, r);
             }
-            catch (CliException e) { exit = e.Code; return Error(command, e.Message); }
-            catch (Exception e) { exit = 1; return Error(command, e.GetType().Name + ": " + e.Message); }
+            catch (CliException e) { exit = e.Code; return Error(command, e.Message, e.Code == 3); }
+            catch (Exception e) { exit = 1; return Error(command, e.GetType().Name + ": " + e.Message, false); }
         }
 
-        static string Error(string command, string message)
+        static string Error(string command, string message, bool denied)
         {
-            return new JObj().Add("ok", false).Add("command", command).Add("error", message).ToString();
+            var o = new JObj().Add("ok", false).Add("command", command).Add("error", message);
+            if (denied) o.Add("denied", true);
+            return o.ToString();
         }
 
         // junta as chaves de b depois das de a
@@ -153,6 +191,7 @@ namespace CapturaTela
 
         static JObj Info()
         {
+            Gate.Require("info", "info", "Ver informacoes dos monitores e a posicao do cursor");
             var screens = new JArr();
             var all = Screen.AllScreens;
             for (int i = 0; i < all.Length; i++)
@@ -169,6 +208,7 @@ namespace CapturaTela
 
         static JObj Windows(CliArgs a)
         {
+            Gate.Require("windows", "windows", "Listar as janelas abertas (titulos e programas)");
             string filter = a.Get("filter");
             var arr = new JArr();
             foreach (var w in Native.ListWindows(false))
@@ -208,6 +248,7 @@ namespace CapturaTela
             else
             {
                 var p = ParseInts(a.Get("at"), 2, "--at");
+                NeedScreen("ler a cor de um pixel");
                 var vs = SystemInformation.VirtualScreen;
                 if (!vs.Contains(p[0], p[1])) throw new CliException("Ponto fora da tela virtual.", 1);
                 using (var bmp = Grab(new Rectangle(p[0], p[1], 1, 1), false)) c = bmp.GetPixel(0, 0);
@@ -223,6 +264,7 @@ namespace CapturaTela
             int maxWidth = a.GetInt("max-width", 0, 0, 20000);
             JObj targetInfo;
             var region = ResolveTarget(a, out targetInfo);
+            string file = OutPath(a, "captura", ExtFor(a));   // pede permissao de escrita antes de capturar
             if (delay > 0) Thread.Sleep(delay);
 
             using (var raw = Grab(region, a.Has("cursor")))
@@ -230,7 +272,6 @@ namespace CapturaTela
                 if (a.Has("clipboard")) Clipboard.SetImage(raw);
                 using (var outBmp = Downscale(raw, maxWidth))
                 {
-                    string file = OutPath(a, "captura", ExtFor(a));
                     SaveImage(outBmp, file);
                     var r = new JObj().Add("file", file).Add("width", outBmp.Width).Add("height", outBmp.Height)
                         .Add("bytes", new FileInfo(file).Length).Add("region", Json.Rect(region)).Add("target", targetInfo);
@@ -247,6 +288,7 @@ namespace CapturaTela
             int fps = a.GetInt("fps", 10, 1, 25);
             int maxWidth = a.GetInt("max-width", 960, 16, 20000);
             bool cursor = a.Has("cursor");
+            Gate.Require("action:record", "action:record", "Gravar GIF e capturar com rolagem");
             JObj targetInfo;
             var region = ResolveTarget(a, out targetInfo);
 
@@ -289,6 +331,7 @@ namespace CapturaTela
         static JObj Scroll(CliArgs a)
         {
             int steps = a.GetInt("max-steps", 60, 1, 200);
+            Gate.Require("action:record", "action:record", "Gravar GIF e capturar com rolagem");
             JObj targetInfo;
             var region = ResolveTarget(a, out targetInfo);
             using (var bmp = ScrollCapture.Run(region, steps))
@@ -302,6 +345,7 @@ namespace CapturaTela
 
         static JObj OcrCmd(CliArgs a)
         {
+            Gate.Require("action:ocr", "action:ocr", "Ler texto de imagens (OCR)");
             Bitmap bmp;
             JObj source;
             if (a.Has("image")) { bmp = LoadImage(a.Get("image")); source = new JObj().Add("image", Path.GetFullPath(a.Get("image"))); }
@@ -329,6 +373,7 @@ namespace CapturaTela
             string input = a.Get("in"), output = a.Get("out");
             if (input == null || output == null) throw new CliException("annotate precisa de --in e --out.");
             int maxWidth = a.GetInt("max-width", 0, 0, 20000);
+            NeedWrite(output);   // pede antes de ler, para negar sem tocar em nada
 
             Bitmap work = LoadImage(input);
             Color color = Color.Red;
@@ -417,6 +462,7 @@ namespace CapturaTela
 
             var vs = SystemInformation.VirtualScreen;
             Rectangle r;
+            if (!a.Has("window") && !a.Has("active")) NeedScreen(a.Has("region") ? "uma regiao" : "a tela inteira ou um monitor");
             if (a.Has("fullscreen")) { r = vs; info = new JObj().Add("type", "fullscreen"); }
             else if (a.Has("screen"))
             {
@@ -443,6 +489,9 @@ namespace CapturaTela
                     foreach (var c in Native.ListWindows(false)) if (Matches(c, q)) { w = c; break; }
                     if (w == null) throw new CliException("Nenhuma janela visivel combina com \"" + q + "\". Use o comando 'windows'.", 1);
                 }
+                string proc = w.Process.ToLowerInvariant();
+                Gate.Require("target:window:" + proc, "target:window:" + proc,
+                    "Capturar a janela \"" + w.Title + "\" (programa \"" + w.Process + "\")");
                 if (!a.Has("no-activate"))
                 {
                     Native.Activate(w.Handle);
@@ -486,6 +535,7 @@ namespace CapturaTela
         static Bitmap LoadImage(string path)
         {
             if (path == null) throw new CliException("Falta --image.");
+            NeedRead(path);
             if (!File.Exists(path)) throw new CliException("Arquivo nao encontrado: " + path, 1);
             // carrega em memoria para nao manter o arquivo bloqueado
             using (var img = Image.FromFile(path))
@@ -515,7 +565,7 @@ namespace CapturaTela
         {
             string o = a.Get("out");
             string file;
-            if (o != null) file = Path.GetFullPath(o);
+            if (o != null) { file = Path.GetFullPath(o); NeedWrite(file); }
             else
             {
                 Directory.CreateDirectory(OutputDir());

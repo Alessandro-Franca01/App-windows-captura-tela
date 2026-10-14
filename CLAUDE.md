@@ -24,7 +24,9 @@ O `csc` 4.0 so entende C# 5. **Nao use**: `?.`, `??=`, `$"..."` (interpolacao), 
 | Arquivo | Papel |
 |---|---|
 | `Program.cs` | `Main`, instancia unica (mutex), argumento `/tray`; qualquer outro argumento vai para a CLI |
-| `Cli.cs` + `Json.cs` | Interface de linha de comando (JSON em stdout) |
+| `Cli.cs` + `Json.cs` | Interface de linha de comando (JSON em stdout); chama `Cli.Gate.Require(...)` antes de cada acao sensivel |
+| `Permissions.cs` | Arquivo de permissoes, `PromptGate` (uma vez / sempre / negar) |
+| `PermissionDialog.cs` + `PermissionsForm.cs` | Pergunta ao usuario e tela para gerenciar permissoes |
 | `MainForm.cs` | Janela principal, barras, bandeja, atalhos globais, fluxo de captura |
 | `OverlayForm.cs` | Tela congelada para selecionar a area; barra de modos; lupa |
 | `Canvas.cs` + `Annotations.cs` | Editor: anotacoes, historico desfazer/refazer, zoom, `Flatten()` |
@@ -66,3 +68,9 @@ CapturaTelaCli.exe annotate --in a.png --out b.png --pixelate 10,10,300,20 --arr
 - Ao adicionar um comando: registre-o no `switch` de `Execute`, documente em `docs/CLI.md` e na ajuda (`Usage`), e cubra em `tests/CliTests.cs`.
 - Capturar a tela revela conteudo do usuario: prefira `--window` a `--fullscreen`, use `--max-width` para enviar imagens e nao deixe capturas fora de `%TEMP%` sem necessidade.
 - `CapturaTelaCli.exe` e compilado com `/define:CLI` (sem argumentos mostra a ajuda em vez de abrir a janela).
+
+## Permissoes da IA
+Toda acao sensivel da CLI passa por `Cli.Gate.Require(chave, chaveSempre, descricao)` (veja [docs/PERMISSOES.md](docs/PERMISSOES.md)). O gate padrao permite tudo; o servidor MCP e a opcao "exigir permissao na CLI" usam `PromptGate`, que consulta `CapturaTela.permissoes.ini` e pergunta ao usuario.
+- Ao criar um comando/ferramenta que le a tela, lista janelas ou mexe em arquivos, **peca a permissao antes do efeito colateral** (antes de ativar uma janela, de capturar ou de escrever).
+- Testes: use `PermissionTests` como modelo (`WithStore` isola o arquivo de permissoes por variavel de ambiente e restaura o gate).
+- O usuario decide; nunca conceda permissoes por conta propria nem edite `CapturaTela.permissoes.ini` sem ele pedir.
