@@ -1,0 +1,33 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+html,body{margin:0;background:var(--surface);}
+.cover{position:relative;width:960px;height:288px;overflow:hidden;background:var(--surface);color:var(--ink);font-family:var(--font-sans);}
+.txt{position:absolute;left:32px;bottom:28px;width:440px;}
+h1{margin:0;font-size:72px;line-height:.95;font-weight:600;letter-spacing:0;}
+p{margin:14px 0 0;font-size:13px;line-height:1.4;}
+svg{position:absolute;left:480px;top:0;}
+.slab{fill:var(--accent)} .deep{fill:var(--accent-checked)} .well{fill:var(--border-dark)} .red{fill:var(--annotation-red)}
+.bracket{fill:none;stroke:var(--on-accent);stroke-width:6}
+.dot{fill:var(--on-accent)}
+.cut{fill:none;stroke:var(--on-accent);stroke-width:2;stroke-dasharray:10 6}
+</style></head>
+<body><div class="cover">
+<svg width="480" height="288" viewBox="0 0 480 288" xmlns="http://www.w3.org/2000/svg">
+<!--
+blocks: accent 232x240 slab (x8–240), border-dark 208x120 (x256–464, top), accent-checked 104x104 and annotation-red 88x104 (bottom right), sizes are multiples of inset-10/12/16/20 steps
+arrangement: one tall slab with satellites, staggered bottom row, square corners because the system has no radius token
+pattern: viewfinder corner brackets and a centre dot on the slab, from the app icon (blue viewfinder with a centre dot) and its purpose, selecting an area of the screen; a dashed selection frame on the grey block
+steps and radii: bracket arm 40, inset 24 inside the slab; no radius, corners square
+-->
+<rect class="slab" x="8" y="24" width="232" height="240"/>
+<rect class="well" x="256" y="24" width="208" height="120"/>
+<rect class="deep" x="256" y="160" width="104" height="104"/>
+<rect class="red" x="376" y="160" width="88" height="104"/>
+<path class="bracket" d="M32 88 V48 H72 M176 48 H216 V88 M216 200 V240 H176 M72 240 H32 V200"/>
+<circle class="dot" cx="124" cy="144" r="12"/>
+<rect class="cut" x="276" y="44" width="168" height="80"/>
+</svg>
+<div class="txt"><h1>Ferramenta<br>de Captura</h1><p>Capture, anote e copie a tela, direto do Windows.</p></div>
+</div></body></html>
