@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace CapturaTela
 {
-    enum CaptureMode { Rectangle, Freeform, Window, FullScreen }
+    enum CaptureMode { Rectangle, Freeform, Window, FullScreen, Scroll, Record }
 
     static class Native
     {
@@ -24,6 +24,12 @@ namespace CapturaTela
         [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr hWnd, int attr, out RECT r, int size);
         [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr hWnd, int attr, out int v, int size);
 
+        [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+        [DllImport("user32.dll")] public static extern void mouse_event(uint flags, int dx, int dy, int data, UIntPtr extra);
+        [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vKey);
+
+        public const uint MOUSEEVENTF_WHEEL = 0x0800;
+        public const int VK_ESCAPE = 0x1B;
         public const int WM_HOTKEY = 0x0312;
         public const int GWL_EXSTYLE = -20;
         public const int WS_EX_TOOLWINDOW = 0x80;
