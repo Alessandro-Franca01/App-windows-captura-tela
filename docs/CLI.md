@@ -12,7 +12,7 @@ Ambos sao gerados por `build.bat`. Rodar `CapturaTelaCli.exe` sem argumentos (ou
 ## Contrato de saida
 - **Uma linha de JSON em stdout**, sempre ASCII (acentos viram `\uXXXX`), sem BOM.
 - `"ok": true` em sucesso; `"ok": false` com `"error"` em falha.
-- Codigo de saida: `0` ok, `1` erro ao executar (janela nao encontrada, area fora da tela...), `2` uso incorreto (opcao invalida).
+- Codigo de saida: `0` ok, `1` erro ao executar (janela nao encontrada, area fora da tela...), `2` uso incorreto (opcao invalida), `3` permissao negada (veja [PERMISSOES.md](PERMISSOES.md); so se a opcao "exigir permissao na CLI" estiver ligada).
 - Coordenadas em **pixels fisicos**. A tela virtual pode ter origem negativa (monitor a esquerda do principal): consulte `info`.
 - Sem `--out`, os arquivos vao para `%TEMP%\CapturaTela\` e o caminho vem no JSON.
 
