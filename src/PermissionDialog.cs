@@ -18,7 +18,13 @@ namespace CapturaTela
 
         public readonly Button OnceBtn = new Button(), AlwaysBtn = new Button(), DenyBtn = new Button(), DenyAlwaysBtn = new Button();
 
-        public PermissionDialog(PromptRequest req)
+        // armMs: os botoes so ficam ativos depois desse tempo, para que uma tecla digitada em outra janela
+        // (ex.: Enter) nao aprove o pedido por acidente quando o dialogo roubar o foco.
+        public const int DefaultArmMs = 1200;
+
+        public PermissionDialog(PromptRequest req) : this(req, DefaultArmMs) { }
+
+        public PermissionDialog(PromptRequest req, int armMs)
         {
             Text = "Pedido de permissao";
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -64,8 +70,19 @@ namespace CapturaTela
                 UpdateCountdown();
                 if (left <= 0) { Answer = PromptAnswer.Deny; Close(); }
             };
-            Shown += delegate { timer.Start(); Activate(); OnceBtn.Focus(); };
+            foreach (var b in Buttons()) b.Enabled = armMs <= 0;
+            Shown += delegate
+            {
+                timer.Start(); Activate();
+                DenyBtn.Select();   // o foco comeca em "Negar": o caminho seguro
+                if (armMs <= 0) return;
+                var arm = new Timer { Interval = armMs };
+                arm.Tick += delegate { arm.Stop(); arm.Dispose(); foreach (var b in Buttons()) b.Enabled = true; DenyBtn.Select(); };
+                arm.Start();
+            };
         }
+
+        Button[] Buttons() { return new Button[] { OnceBtn, AlwaysBtn, DenyBtn, DenyAlwaysBtn }; }
 
         void SetupButton(Button b, string text, int x, PromptAnswer answer)
         {

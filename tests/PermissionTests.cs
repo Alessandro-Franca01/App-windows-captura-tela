@@ -163,7 +163,7 @@ namespace CapturaTela.Tests
                 var map = new Dictionary<string, PromptAnswer>();
                 foreach (string which in new[] { "once", "always", "deny", "denyalways" })
                 {
-                    using (var d = new PermissionDialog(req))
+                    using (var d = new PermissionDialog(req, 0))
                     {
                         string w = which;
                         d.Shown += delegate
@@ -180,6 +180,28 @@ namespace CapturaTela.Tests
                 Assert.Equal(PromptAnswer.Deny, map["deny"], "negar");
                 Assert.Equal(PromptAnswer.DenyAlways, map["denyalways"], "negar sempre");
             });
+            TestRunner.Run("permissoes: botoes ficam desativados no inicio (evita aprovar sem querer com Enter)", delegate
+            {
+                var req = new PromptRequest { Client = "Teste", Key = "info", AlwaysKey = "info", Description = "x" };
+                bool before = true, after = false, denyFocused = false;
+                using (var d = new PermissionDialog(req, 500))
+                {
+                    d.Shown += delegate
+                    {
+                        before = d.OnceBtn.Enabled;
+                        denyFocused = d.ActiveControl == d.DenyBtn;
+                        var t = new Timer { Interval = 1200 };
+                        t.Tick += delegate { t.Stop(); after = d.OnceBtn.Enabled; d.Close(); };
+                        t.Start();
+                    };
+                    d.ShowDialog();
+                    Assert.Equal(PromptAnswer.Deny, d.Answer, "fechar sem escolher nega");
+                }
+                Assert.True(!before, "desativado logo ao abrir");
+                Assert.True(after, "ativado depois do atraso");
+                Assert.True(denyFocused, "foco inicial em Negar");
+            });
+
         }
     }
 }

@@ -35,6 +35,9 @@ CapturaTelaCli.exe annotate --in a.png --out b.png --pixelate 10,10,300,20
 ```
 Referencia completa em [docs/CLI.md](docs/CLI.md).
 
+## Uso por IA (MCP) e permissoes
+`CapturaTelaCli.exe mcp` e um servidor MCP: clientes de IA capturam janelas, fazem OCR e anotam imagens, **sempre com permissao do usuario** (uma vez / sempre / negar). Veja [docs/MCP.md](docs/MCP.md) e [docs/PERMISSOES.md](docs/PERMISSOES.md).
+
 ## Testes
 ```
 test.bat
