@@ -47,6 +47,7 @@ namespace CapturaTela.Tests
             McpTests.Register();
             ScrollSessionTests.Register();
             HelpTests.Register();
+            VisualTests.Register();
 
             Console.WriteLine();
             Console.WriteLine("Resultado: " + passed + " ok, " + failed + " falhas, " + skipped + " pulados");

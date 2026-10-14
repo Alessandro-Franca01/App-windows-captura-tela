@@ -125,6 +125,40 @@ namespace CapturaTela
 
     // ---------------------------------------------------------------------------------
 
+    enum RiskLevel { Low, Medium, High }
+
+    // Quanto uma permissao expoe o usuario (mostrado no pedido de permissao; sempre com texto, nunca so cor).
+    static class PermissionRisk
+    {
+        public static RiskLevel Of(string key)
+        {
+            string k = key.ToLowerInvariant();
+            if (k == "info" || k == "windows" || k == "action:ocr") return RiskLevel.Low;
+            if (k == "target:screen" || k.StartsWith("file:write:") || k == "target:window:*") return RiskLevel.High;
+            return RiskLevel.Medium;
+        }
+
+        public static string Label(RiskLevel level)
+        {
+            return level == RiskLevel.Low ? "Risco baixo" : level == RiskLevel.High ? "Risco alto" : "Risco médio";
+        }
+
+        public static string Explain(string key)
+        {
+            string k = key.ToLowerInvariant();
+            if (k == "info") return "Só informações sobre os monitores; nenhuma imagem.";
+            if (k == "windows") return "Só os títulos e programas das janelas abertas; nenhuma imagem.";
+            if (k == "action:ocr") return "Só reconhece o texto de imagens que você já permitiu.";
+            if (k == "action:record") return "Grava GIFs curtos ou rola o conteúdo; precisa também de permissão para o alvo.";
+            if (k == "target:screen") return "A IA vê tudo o que estiver na tela, inclusive dados pessoais.";
+            if (k == "target:window:*") return "A IA vê as janelas de qualquer programa.";
+            if (k.StartsWith("target:window:")) return "A IA vê o conteúdo das janelas desse programa.";
+            if (k.StartsWith("file:read:")) return "A IA lê arquivos do seu computador.";
+            if (k.StartsWith("file:write:")) return "A IA grava arquivos no seu computador.";
+            return "A IA usa um recurso do aplicativo.";
+        }
+    }
+
     interface IPermissionGate
     {
         // Lanca CliException (codigo 3) se negado. 'alwaysKey' e o que fica salvo se o usuario escolher "sempre".

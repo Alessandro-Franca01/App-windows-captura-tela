@@ -67,7 +67,7 @@ namespace CapturaTela
 
             var shortcuts = new string[ModeList.Names.Length];
             for (int i = 0; i < shortcuts.Length; i++) shortcuts[i] = (i + 1).ToString();
-            modeBox = new ChoiceButton(ModeList.Names, delegate(int i) { return ModeIcon(ModeList.Order[i]); }, shortcuts, iconPx, true, true);
+            modeBox = new ChoiceButton(ModeList.Names, delegate(int i) { return ModeList.IconOf(ModeList.Order[i]); }, shortcuts, iconPx, true, true);
             modeBox.ToolTipText = "Modo de captura (na seleção, as teclas 1 a 7 trocam de modo). Rolagem automática: o app rola sozinho; Rolagem manual: você rola.";
             Pad(modeBox, 9, 7);
             modeBox.SelectedIndex = ModeList.IndexOf((CaptureMode)settings.Mode);
@@ -196,6 +196,7 @@ namespace CapturaTela
             Theme.Apply(status, dark);
             if (tray.ContextMenuStrip != null) Theme.Apply(tray.ContextMenuStrip, dark);   // o menu da bandeja tambem segue o tema
             scroller.BackColor = dark ? Color.FromArgb(24, 24, 24) : Color.FromArgb(48, 48, 48);
+            Theme.NativeTheme(scroller, true);   // o fundo da area de edicao e escuro nos dois temas: barras de rolagem escuras
             UpdateColorButton();
         }
 
@@ -365,20 +366,6 @@ namespace CapturaTela
             var s = new ToolStripSeparator();
             s.Margin = new Padding((int)(4 * uiScale), 0, (int)(4 * uiScale), 0);
             return s;
-        }
-
-        static IconKind ModeIcon(CaptureMode m)
-        {
-            switch (m)
-            {
-                case CaptureMode.Freeform: return IconKind.ModeFree;
-                case CaptureMode.Window: return IconKind.ModeWindow;
-                case CaptureMode.FullScreen: return IconKind.ModeScreen;
-                case CaptureMode.Scroll: return IconKind.ScrollAuto;
-                case CaptureMode.ScrollManual: return IconKind.ScrollManual;
-                case CaptureMode.Record: return IconKind.Gif;
-                default: return IconKind.ModeRect;
-            }
         }
 
         void AddTool(string tool, string tip, IconKind icon)

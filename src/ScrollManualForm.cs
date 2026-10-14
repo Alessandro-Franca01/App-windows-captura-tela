@@ -19,8 +19,8 @@ namespace CapturaTela
         readonly Timer timer = new Timer();
         readonly Label info = new Label();
         readonly Label hint = new Label();
-        readonly Button doneBtn = new Button();
-        readonly Button cancelBtn = new Button();
+        readonly FlatButton doneBtn = new FlatButton();
+        readonly FlatButton cancelBtn = new FlatButton();
 
         public ScrollManualForm(Rectangle region)
         {
@@ -30,14 +30,14 @@ namespace CapturaTela
             ShowInTaskbar = false;
             TopMost = true;
             StartPosition = FormStartPosition.Manual;
-            ClientSize = new Size(420, 112);
-            Font = new Font("Segoe UI", 9);
+            ClientSize = new Size(440, 128);
+            Font = new Font("Segoe UI", 9.5f);
             KeyPreview = true;
 
-            info.Left = 12; info.Top = 10; info.Width = 396; info.Height = 20; info.Font = new Font("Segoe UI Semibold", 9.5f);
-            hint.Left = 12; hint.Top = 32; hint.Width = 396; hint.Height = 34; hint.ForeColor = Theme.Muted;
-            doneBtn.Text = "Concluir"; doneBtn.Left = 12; doneBtn.Top = 72; doneBtn.Width = 130; doneBtn.Height = 32;
-            cancelBtn.Text = "Cancelar"; cancelBtn.Left = 150; cancelBtn.Top = 72; cancelBtn.Width = 110; cancelBtn.Height = 32;
+            info.Left = 14; info.Top = 12; info.Width = 412; info.Height = 22; info.Font = new Font("Segoe UI Semibold", 10f);
+            hint.Left = 14; hint.Top = 38; hint.Width = 412; hint.Height = 42; hint.ForeColor = Theme.Muted;
+            doneBtn.Text = "Concluir"; doneBtn.Left = 14; doneBtn.Top = 84; doneBtn.Width = 140; doneBtn.Height = 36; doneBtn.Variant = ButtonVariant.Primary;
+            cancelBtn.Text = "Cancelar"; cancelBtn.Left = 162; cancelBtn.Top = 84; cancelBtn.Width = 120; cancelBtn.Height = 36;
             doneBtn.Click += delegate { Finish(true); };
             cancelBtn.Click += delegate { Finish(false); };
             Controls.AddRange(new Control[] { info, hint, doneBtn, cancelBtn });
@@ -100,11 +100,12 @@ namespace CapturaTela
             info.Text = "Capturado: " + session.Height + " px de altura";
             switch (session.State)
             {
-                case ScrollState.Moving: hint.Text = "Aguardando o conteúdo parar de se mexer..."; break;
-                case ScrollState.Captured: hint.Text = "Trecho novo capturado. Continue rolando para baixo."; break;
-                case ScrollState.Above: hint.Text = "Você voltou para cima: role para baixo até passar do que já foi capturado."; break;
-                case ScrollState.Lost: hint.Text = "Rolou demais de uma vez e perdi o encaixe. Volte um pouco para cima, até ver de novo a parte já capturada."; break;
-                default: hint.Text = "Role o conteúdo com a roda do mouse, devagar. Clique em Concluir (ou use o atalho) no fim."; break;
+                // cada estado tem simbolo + texto + cor (nunca so cor)
+                case ScrollState.Moving: hint.Text = "… Aguardando o conteúdo parar de se mexer."; hint.ForeColor = Theme.Muted; break;
+                case ScrollState.Captured: hint.Text = "✓ Trecho novo capturado. Continue rolando para baixo."; hint.ForeColor = Theme.Success; break;
+                case ScrollState.Above: hint.Text = "↑ Você voltou para cima: role para baixo até passar do que já foi capturado."; hint.ForeColor = Theme.Warning; break;
+                case ScrollState.Lost: hint.Text = "⚠ Rolou demais de uma vez e perdi o encaixe. Volte um pouco para cima, até ver de novo a parte já capturada."; hint.ForeColor = Theme.Danger; break;
+                default: hint.Text = "Role o conteúdo com a roda do mouse, devagar. Clique em Concluir (ou use o atalho) no fim."; hint.ForeColor = Theme.Muted; break;
             }
         }
 

@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace CapturaTela
 {
+    // Configuracoes agrupadas por assunto: Captura, Salvamento, Sistema, Aparencia e Inteligencia artificial.
     class SettingsForm : Form
     {
         readonly AppSettings s;
@@ -25,26 +26,28 @@ namespace CapturaTela
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
             StartPosition = FormStartPosition.CenterParent;
-            ClientSize = new Size(440, 340);
-            Font = new Font("Segoe UI", 9);
+            ClientSize = new Size(540, 590);
+            Font = new Font("Segoe UI", 9.5f);
 
-            int y = 16;
-            Controls.Add(new Label { Text = "Atalho de captura (clique e pressione as teclas):", Left = 16, Top = y, Width = 400 });
-            y += 22;
-            hotkeyBox.Left = 16; hotkeyBox.Top = y; hotkeyBox.Width = 408; hotkeyBox.ReadOnly = true;
+            // ---- Captura ----
+            Section("Captura", 14);
+            Label("Atalho para capturar de qualquer lugar", 20, 46, 330);
+            hotkeyBox.Left = 20; hotkeyBox.Top = 68; hotkeyBox.Width = 230; hotkeyBox.ReadOnly = true;
+            hotkeyBox.Font = new Font("Segoe UI Semibold", 10.5f);
             hotkeyBox.Text = AppSettings.HotkeyText(mods, key);
             hotkeyBox.KeyDown += OnHotkeyDown;
             hotkeyBox.KeyUp += OnHotkeyUp;
+            // o campo somente leitura seleciona o texto ao receber foco: parece um erro, entao tiramos a selecao
+            hotkeyBox.GotFocus += delegate { BeginInvoke(new Action(delegate { hotkeyBox.SelectionStart = hotkeyBox.TextLength; hotkeyBox.SelectionLength = 0; })); };
             Controls.Add(hotkeyBox);
-            y += 38;
+            Muted("Clique na caixa e aperte as teclas.\nCtrl+Shift+S continua funcionando.", 262, 66, 258, 34);
 
-            autoSave.Text = "Salvar cada captura automaticamente em:"; autoSave.Left = 16; autoSave.Top = y; autoSave.Width = 400;
-            autoSave.Checked = s.AutoSave;
-            Controls.Add(autoSave);
-            y += 26;
-            dirBox.Left = 16; dirBox.Top = y; dirBox.Width = 330; dirBox.Text = s.AutoSaveDir;
+            // ---- Salvamento ----
+            Section("Salvamento", 116);
+            Check(autoSave, "Salvar cada captura automaticamente na pasta abaixo", 20, 148, s.AutoSave);
+            dirBox.Left = 20; dirBox.Top = 176; dirBox.Width = 388; dirBox.Text = s.AutoSaveDir;
             Controls.Add(dirBox);
-            var browse = new Button { Text = "Procurar...", Left = 352, Top = y - 1, Width = 72 };
+            var browse = new FlatButton { Text = "Procurar…", Left = 418, Top = 174, Width = 102, Height = 28 };
             browse.Click += delegate
             {
                 using (var d = new FolderBrowserDialog())
@@ -54,52 +57,87 @@ namespace CapturaTela
                 }
             };
             Controls.Add(browse);
-            y += 30;
-            Controls.Add(new Label { Text = "Formato:", Left = 16, Top = y + 3, Width = 60 });
+            Label("Formato:", 20, 212, 70);
             fmtBox.DropDownStyle = ComboBoxStyle.DropDownList;
             fmtBox.Items.AddRange(new object[] { "PNG", "JPG" });
             fmtBox.SelectedIndex = s.AutoSaveFormat == "jpg" ? 1 : 0;
-            fmtBox.Left = 80; fmtBox.Top = y; fmtBox.Width = 80;
+            fmtBox.Left = 94; fmtBox.Top = 208; fmtBox.Width = 90;
             Controls.Add(fmtBox);
-            y += 38;
 
-            tray.Text = "Fechar a janela mantém o app na bandeja do sistema"; tray.Left = 16; tray.Top = y; tray.Width = 410;
-            tray.Checked = s.CloseToTray;
-            Controls.Add(tray);
-            y += 26;
-            startup.Text = "Iniciar com o Windows (minimizado na bandeja)"; startup.Left = 16; startup.Top = y; startup.Width = 410;
-            startup.Checked = AppSettings.GetStartWithWindows();
-            Controls.Add(startup);
-            y += 26;
-            notify.Text = "Mostrar notificação depois de capturar ou gravar"; notify.Left = 16; notify.Top = y; notify.Width = 410;
-            notify.Checked = s.Notify;
-            Controls.Add(notify);
-            y += 34;
-            Controls.Add(new Label { Text = "Tema:", Left = 16, Top = y + 3, Width = 50 });
+            // ---- Sistema ----
+            Section("Sistema", 252);
+            Check(tray, "Fechar a janela mantém o app na bandeja do sistema", 20, 284, s.CloseToTray);
+            Check(startup, "Iniciar com o Windows (minimizado na bandeja)", 20, 312, AppSettings.GetStartWithWindows());
+            Check(notify, "Mostrar notificação depois de capturar ou gravar", 20, 340, s.Notify);
+
+            // ---- Aparencia ----
+            Section("Aparência", 380);
+            Label("Tema:", 20, 416, 60);
             themeBox.DropDownStyle = ComboBoxStyle.DropDownList;
             themeBox.Items.AddRange(new object[] { "Seguir o Windows", "Claro", "Escuro" });
             themeBox.SelectedIndex = s.Theme;
-            themeBox.Left = 70; themeBox.Top = y; themeBox.Width = 160;
+            themeBox.Left = 84; themeBox.Top = 412; themeBox.Width = 180;
             Controls.Add(themeBox);
 
-            var perms = new Button { Text = "Permissões da IA...", Left = 16, Top = 302, Width = 150 };
+            // ---- Inteligencia artificial ----
+            Section("Inteligência artificial", 454);
+            Muted("Você decide o que programas de IA podem fazer com a Ferramenta de Captura.", 20, 486, 500, 20);
+            var perms = new FlatButton { Text = "Permissões da IA…", Left = 20, Top = 510, Width = 190, Height = 32, Icon = IconKind.Shield };
             perms.Click += delegate { using (var f = new PermissionsForm()) f.ShowDialog(this); };
             Controls.Add(perms);
 
-            var ok = new Button { Text = "OK", Left = 268, Top = 302, Width = 75, DialogResult = DialogResult.OK };
-            var cancel = new Button { Text = "Cancelar", Left = 349, Top = 302, Width = 75, DialogResult = DialogResult.Cancel };
+            var ok = new FlatButton { Text = "OK", Left = 336, Top = 548, Width = 90, Height = 34, Variant = ButtonVariant.Primary, DialogResult = DialogResult.OK };
+            var cancel = new FlatButton { Text = "Cancelar", Left = 434, Top = 548, Width = 90, Height = 34, DialogResult = DialogResult.Cancel };
             ok.Click += delegate { Apply(); };
             Controls.Add(ok); Controls.Add(cancel);
             AcceptButton = ok; CancelButton = cancel;
             Theme.ScaleForDpi(this);
             Theme.Apply(this);
+            foreach (Control c in Controls) { var l = c as Label; if (l != null && l.Tag as string == "muted") l.ForeColor = Theme.Muted; }
         }
+
+        // ---- construcao ----
+
+        void Section(string title, int y)
+        {
+            Controls.Add(new Label { Text = title, Left = 20, Top = y, Width = 340, Height = 24, Font = new Font("Segoe UI Semibold", 10.5f), Tag = "section" });
+            Controls.Add(new Divider { Left = 20, Top = y + 26, Width = 500, Height = 1 });
+        }
+
+        void Label(string text, int x, int y, int w)
+        {
+            Controls.Add(new Label { Text = text, Left = x, Top = y, Width = w, Height = 22 });
+        }
+
+        void Muted(string text, int x, int y, int w, int h)
+        {
+            Controls.Add(new Label { Text = text, Left = x, Top = y, Width = w, Height = h, ForeColor = Theme.Muted, Tag = "muted" });
+        }
+
+        void Check(CheckBox c, string text, int x, int y, bool value)
+        {
+            c.Text = text; c.Left = x; c.Top = y; c.Width = 500; c.Height = 24; c.Checked = value;
+            Controls.Add(c);
+        }
+
+        // linha fina entre secoes
+        class Divider : Control
+        {
+            public Divider() { SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true); }
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                e.Graphics.Clear(Parent != null ? Parent.BackColor : Theme.Surface);
+                using (var p = new Pen(Theme.BarBorder)) e.Graphics.DrawLine(p, 0, 0, Width, 0);
+            }
+        }
+
+        // ---- atalho ----
 
         void OnHotkeyDown(object sender, KeyEventArgs e)
         {
             e.SuppressKeyPress = true; e.Handled = true;
             if (IsModifier(e.KeyCode)) return;
-            if (e.KeyCode == Keys.PrintScreen) return; // Print Screen so gera KeyUp
+            if (e.KeyCode == Keys.PrintScreen) return; // Print Screen só gera KeyUp
             SetHotkey(e);
         }
 
@@ -124,6 +162,7 @@ namespace CapturaTela
             if (e.Shift) m |= Native.MOD_SHIFT;
             mods = m; key = e.KeyCode;
             hotkeyBox.Text = AppSettings.HotkeyText(mods, key);
+            hotkeyBox.SelectionStart = hotkeyBox.TextLength; hotkeyBox.SelectionLength = 0;
         }
 
         void Apply()

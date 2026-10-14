@@ -22,8 +22,8 @@ namespace CapturaTela
         readonly Timer timer = new Timer();
         readonly Stopwatch clock = new Stopwatch();
         readonly Label info = new Label();
-        readonly Button startBtn = new Button();
-        readonly Button cancelBtn = new Button();
+        readonly FlatButton startBtn = new FlatButton();
+        readonly FlatButton cancelBtn = new FlatButton();
         readonly Size outSize;
         bool recording;
 
@@ -38,14 +38,15 @@ namespace CapturaTela
             ShowInTaskbar = false;
             TopMost = true;
             StartPosition = FormStartPosition.Manual;
-            ClientSize = new Size(320, 84);
-            Font = new Font("Segoe UI", 9);
+            ClientSize = new Size(360, 96);
+            Font = new Font("Segoe UI", 9.5f);
             KeyPreview = true;
 
-            info.Text = "Pronto para gravar (" + region.Width + " x " + region.Height + ")";
-            info.Left = 12; info.Top = 10; info.Width = 296; info.Height = 22;
-            startBtn.Text = "● Iniciar"; startBtn.Left = 12; startBtn.Top = 40; startBtn.Width = 150; startBtn.Height = 32;
-            cancelBtn.Text = "Cancelar"; cancelBtn.Left = 170; cancelBtn.Top = 40; cancelBtn.Width = 138; cancelBtn.Height = 32;
+            info.Text = "Pronto para gravar · " + region.Width + " × " + region.Height + " px";
+            info.Left = 14; info.Top = 12; info.Width = 332; info.Height = 22;
+            info.Font = new Font("Segoe UI Semibold", 9.5f);
+            startBtn.Text = "● Iniciar gravação"; startBtn.Left = 14; startBtn.Top = 46; startBtn.Width = 190; startBtn.Height = 36; startBtn.Variant = ButtonVariant.Danger;
+            cancelBtn.Text = "Cancelar"; cancelBtn.Left = 212; cancelBtn.Top = 46; cancelBtn.Width = 134; cancelBtn.Height = 36;
             startBtn.Click += delegate { if (recording) StopRecording(); else StartRecording(); };
             cancelBtn.Click += delegate { Frames.Clear(); DialogResult = DialogResult.Cancel; Close(); };
             Controls.AddRange(new Control[] { info, startBtn, cancelBtn });
@@ -63,7 +64,7 @@ namespace CapturaTela
             Location = new Point(x, y);
             Theme.ScaleForDpi(this);
             Theme.Apply(this);
-            startBtn.ForeColor = Theme.Danger;   // "● Iniciar": vermelho com contraste e sempre com texto
+            info.ForeColor = Theme.Ink;
         }
 
         protected override void OnShown(EventArgs e)
@@ -97,8 +98,9 @@ namespace CapturaTela
         void StartRecording()
         {
             recording = true;
-            startBtn.Text = "■ Parar";
+            startBtn.Text = "■ Parar gravação";
             cancelBtn.Enabled = false;
+            info.ForeColor = Theme.Danger;
             clock.Restart();
             CaptureFrame();
             timer.Start();
@@ -109,9 +111,11 @@ namespace CapturaTela
             if (!recording) return;
             CaptureFrame();
             int secs = (int)clock.Elapsed.TotalSeconds;
-            info.Text = "Gravando " + secs + "s / " + MaxSeconds + "s  (Esc ou o atalho para parar)";
+            info.Text = "● REC  " + Clock(secs) + " / " + Clock(MaxSeconds) + "   (Esc ou o atalho para parar)";
             if (clock.Elapsed.TotalSeconds >= MaxSeconds) StopRecording();
         }
+
+        static string Clock(int totalSeconds) { return (totalSeconds / 60).ToString("00") + ":" + (totalSeconds % 60).ToString("00"); }
 
         void StopRecording()
         {
