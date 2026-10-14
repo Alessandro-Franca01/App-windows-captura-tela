@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "captura-tela": {
+      "command": "${CAPTURA_TELA}\CapturaTelaCli.exe",
+      "args": ["mcp"]
+    }
+  }
+}
