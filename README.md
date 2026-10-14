@@ -8,6 +8,7 @@ Clone portatil da Ferramenta de Recorte do Windows, em um unico `.exe` (~25 KB),
 - **Rolagem automatica**: o app rola o conteudo sob a area com a roda do mouse e costura os quadros (Esc interrompe). Se nada rolar, o app sugere o modo manual
 - **Rolagem manual**: voce marca a area e rola com a roda do mouse, devagar; o app fotografa a cada pausa e costura (voltar para cima e seguro). Termine em "Concluir", Enter ou no atalho global; Esc cancela. Serve para o que nao reage a rolagem automatica
 - Paineis e molduras do proprio app nao aparecem nas capturas (Windows 10 2004+)
+- **Ajuda dentro do app**: botao "Ajuda" ou tecla F1 abre o guia do usuario (o mesmo texto de [docs/GUIA.md](docs/GUIA.md), embutido no .exe)
 - GIF: ate 30 s a 10 fps, moldura vermelha fora da area gravada, encoder GIF proprio (sem dependencias)
 - Atraso de 1 a 10 segundos
 - Atalhos globais: `Print Screen` e `Ctrl+Shift+S`
@@ -21,6 +22,9 @@ Clone portatil da Ferramenta de Recorte do Windows, em um unico `.exe` (~25 KB),
 - Notificacoes do Windows ao capturar/gravar (clique abre o arquivo ou o editor)
 - Icone proprio, tema claro/escuro (ou seguir o Windows)
 - Configuracoes lembradas entre execucoes em CapturaTela.ini (ao lado do .exe)
+
+## Primeiros passos
+Nunca usou? Abra o app e aperte **F1**, ou leia o [guia do usuario](docs/GUIA.md).
 
 ## Compilar
 ```

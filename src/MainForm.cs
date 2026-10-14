@@ -28,7 +28,8 @@ namespace CapturaTela
         readonly Dictionary<string, ToolStripButton> toolBtns = new Dictionary<string, ToolStripButton>();
         readonly List<ToolStripItem> editItems = new List<ToolStripItem>();
         readonly ToolStripLabel zoomLabel = new ToolStripLabel("100%");
-        readonly ToolStripButton colorBtn, copyBtn, saveBtn, undoBtn, redoBtn, newBtn, settingsBtn, ocrBtn;
+        readonly ToolStripButton colorBtn, copyBtn, saveBtn, undoBtn, redoBtn, newBtn, settingsBtn, helpBtn, ocrBtn;
+        HelpForm helpForm;
         Action balloonClick;
         readonly Panel scroller = new Panel();
         readonly Canvas canvas = new Canvas();
@@ -84,6 +85,10 @@ namespace CapturaTela
             settingsBtn = Btn("Configuracoes", "Atalho, salvamento automatico, bandeja e inicializacao", delegate { OpenSettings(); });
             settingsBtn.Alignment = ToolStripItemAlignment.Right;
             bar.Items.Add(settingsBtn);
+
+            helpBtn = Btn("Ajuda", "Guia do usuario (F1)", delegate { OpenHelp(0); });
+            helpBtn.Alignment = ToolStripItemAlignment.Right;
+            bar.Items.Add(helpBtn);
 
             // ---- segunda barra: ferramentas de edicao ----
             tools.GripStyle = ToolStripGripStyle.Hidden;
@@ -230,6 +235,7 @@ namespace CapturaTela
             menu.Items.Add("Gravar GIF", null, delegate { StartCapture(CaptureMode.Record); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Configuracoes...", null, delegate { ShowMain(); OpenSettings(); });
+            menu.Items.Add("Ajuda", null, delegate { ShowMain(); OpenHelp(0); });
             menu.Items.Add("Sair", null, delegate { exiting = true; Close(); });
             tray.ContextMenuStrip = menu;
             tray.Icon = AppIcon.Get(SystemInformation.SmallIconSize);
@@ -289,7 +295,7 @@ namespace CapturaTela
 
         void UpdatePlaceholder()
         {
-            placeholder.Text = "Clique em \"+ Novo\" ou pressione " + HotkeyLabel() + " / Ctrl+Shift+S\npara fazer uma captura.";
+            placeholder.Text = "Clique em \"+ Novo\" ou pressione " + HotkeyLabel() + " / Ctrl+Shift+S\npara fazer uma captura.\n\nDuvidas? Clique em Ajuda ou aperte F1.";
         }
 
         // ------------------------------------------------------------ Barras
@@ -355,6 +361,16 @@ namespace CapturaTela
         {
             colorBtn.ForeColor = canvas.PenColor;
             colorBtn.Text = "■ Cor";
+        }
+
+        void OpenHelp(int topic)
+        {
+            if (helpForm == null || helpForm.IsDisposed)
+            {
+                helpForm = new HelpForm(topic);
+                helpForm.Show(this);
+            }
+            else { if (helpForm.WindowState == FormWindowState.Minimized) helpForm.WindowState = FormWindowState.Normal; helpForm.Activate(); }
         }
 
         void OpenSettings()
@@ -432,7 +448,8 @@ namespace CapturaTela
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (e.Control && e.KeyCode == Keys.N) { StartCapture(CurrentMode); e.Handled = true; }
+            if (e.KeyCode == Keys.F1) { OpenHelp(0); e.Handled = true; }
+            else if (e.Control && e.KeyCode == Keys.N) { StartCapture(CurrentMode); e.Handled = true; }
             else if (e.Control && e.KeyCode == Keys.S) { if (canvas.Image != null) SaveImage(); e.Handled = true; }
             else if (e.Control && e.KeyCode == Keys.C) { if (canvas.Image != null) CopyImage(true); e.Handled = true; }
             else if (e.Control && e.KeyCode == Keys.Z) { canvas.Undo(); e.Handled = true; }
