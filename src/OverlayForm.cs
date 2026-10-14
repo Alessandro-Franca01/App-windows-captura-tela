@@ -17,6 +17,9 @@ namespace CapturaTela
         const int LoupeCells = 15, LoupeScale = 8, LoupePanelW = 196;
 
         readonly Bitmap shot;
+        Bitmap bright, dimmed;                 // copias PArgb (pintura rapida): a captura e a captura ja escurecida
+        Rectangle lastSel = Rectangle.Empty;   // ultima selecao pintada (para invalidar so o que mudou)
+        int fMinX, fMinY, fMaxX, fMaxY;
         CaptureMode mode;
         readonly Point origin;                 // canto do monitor virtual
         List<Rectangle> windows;               // coordenadas de tela
@@ -44,7 +47,13 @@ namespace CapturaTela
             Bounds = vs;
             TopMost = true;
             ShowInTaskbar = false;
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
             DoubleBuffered = true;
+            bright = new Bitmap(shot.Width, shot.Height, PixelFormat.Format32bppPArgb);
+            using (var gb = Graphics.FromImage(bright)) { gb.CompositingMode = CompositingMode.SourceCopy; gb.DrawImageUnscaled(shot, 0, 0); }
+            dimmed = (Bitmap)bright.Clone();
+            using (var gd = Graphics.FromImage(dimmed))
+            using (var db = new SolidBrush(Color.FromArgb(120, 0, 0, 0))) gd.FillRectangle(db, 0, 0, dimmed.Width, dimmed.Height);
             Cursor = Cursors.Cross;
             KeyPreview = true;
             using (var gdi = CreateGraphics()) sc = gdi.DpiX / 96f;
@@ -171,6 +180,8 @@ namespace CapturaTela
             start = current = e.Location;
             freePoints.Clear();
             freePoints.Add(e.Location);
+            fMinX = fMaxX = e.X; fMinY = fMaxY = e.Y;
+            lastSel = Rectangle.Empty;
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
@@ -187,14 +198,25 @@ namespace CapturaTela
                 var screenPt = new Point(e.X + origin.X, e.Y + origin.Y);
                 Rectangle found = Rectangle.Empty;
                 if (!onBar) foreach (var w in windows) if (w.Contains(screenPt)) { found = w; break; }
-                if (found != hoverWindow) { hoverWindow = found; Invalidate(); }
+                if (found != hoverWindow)
+                {
+                    var inv = WindowLocal(hoverWindow);
+                    hoverWindow = found;
+                    inv = UnionNonEmpty(inv, WindowLocal(found)); inv.Inflate(6, 6);
+                    Invalidate(inv);
+                }
                 return;
             }
             if (dragging)
             {
                 current = e.Location;
-                if (mode == CaptureMode.Freeform) freePoints.Add(e.Location);
-                Invalidate();
+                if (mode == CaptureMode.Freeform)
+                {
+                    var lp = freePoints[freePoints.Count - 1];
+                    if (Math.Abs(e.X - lp.X) + Math.Abs(e.Y - lp.Y) >= 4) freePoints.Add(e.Location);   // menos pontos = caminho leve
+                    fMinX = Math.Min(fMinX, e.X); fMaxX = Math.Max(fMaxX, e.X); fMinY = Math.Min(fMinY, e.Y); fMaxY = Math.Max(fMaxY, e.Y);
+                }
+                InvalidateSelection();
             }
             else InvalidateLoupe();
         }
@@ -238,6 +260,7 @@ namespace CapturaTela
             using (var path = new GraphicsPath())
             {
                 path.AddPolygon(freePoints.ToArray());
+                path.FillMode = FillMode.Winding;
                 var b = Rectangle.Ceiling(path.GetBounds());
                 b.Intersect(new Rectangle(0, 0, shot.Width, shot.Height));
                 if (b.Width < 1 || b.Height < 1) return;
@@ -276,9 +299,38 @@ namespace CapturaTela
             get { return mode != CaptureMode.Window && mode != CaptureMode.FullScreen && !BarBounds.Contains(mouse); }
         }
 
+        static Rectangle UnionNonEmpty(Rectangle a, Rectangle b)
+        {
+            if (a.IsEmpty) return b;
+            if (b.IsEmpty) return a;
+            return Rectangle.Union(a, b);
+        }
+
+        Rectangle WindowLocal(Rectangle w)
+        {
+            return w.IsEmpty ? w : new Rectangle(w.X - origin.X, w.Y - origin.Y, w.Width, w.Height);
+        }
+
+        // durante o arraste so repinta a regiao que mudou (a tela toda a cada movimento piscava em telas grandes)
+        void InvalidateSelection()
+        {
+            Rectangle cur = mode == CaptureMode.Freeform ? Rectangle.FromLTRB(fMinX, fMinY, fMaxX + 1, fMaxY + 1) : Normalized();
+            var inv = UnionNonEmpty(cur, lastSel);
+            lastSel = cur;
+            inv.Inflate((int)(60 * sc), (int)(60 * sc));   // rotulo de tamanho e contorno
+            Invalidate(inv);
+            InvalidateLoupe();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) { if (bright != null) bright.Dispose(); if (dimmed != null) dimmed.Dispose(); }
+            base.Dispose(disposing);
+        }
+
         void InvalidateLoupe()
         {
-            var r = LoupeRect(); r.Inflate(6, 6);
+            var r = LoupeRect(); r.Height += 14; r.Inflate(12, 12);   // DrawLoupe pinta 14 px alem do painel (sombra incluida)
             var inv = Rectangle.Union(r, lastLoupe);
             lastLoupe = r;
             Invalidate(inv);
@@ -287,47 +339,38 @@ namespace CapturaTela
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
-            g.DrawImageUnscaled(shot, 0, 0);
-            using (var dim = new SolidBrush(Color.FromArgb(120, 0, 0, 0)))
+            var clip = e.ClipRectangle;
+            g.CompositingMode = CompositingMode.SourceCopy;
+            g.DrawImage(dimmed, clip, clip, GraphicsUnit.Pixel);   // fundo ja escurecido
+            g.CompositingMode = CompositingMode.SourceOver;
+            bool selecting = dragging && mode != CaptureMode.Window && mode != CaptureMode.FullScreen;
+            if (selecting && mode != CaptureMode.Freeform)
             {
-                bool selecting = dragging && mode != CaptureMode.Window && mode != CaptureMode.FullScreen;
-                if (selecting && mode != CaptureMode.Freeform)
+                var r = Normalized();
+                if (r.Width > 0 && r.Height > 0)
                 {
-                    var r = Normalized();
-                    g.FillRectangle(dim, ClientRectangle);
-                    if (r.Width > 0 && r.Height > 0)
-                    {
-                        g.DrawImage(shot, r, r, GraphicsUnit.Pixel);
-                        using (var pen = new Pen(mode == CaptureMode.Record ? Color.Red : Color.White, 1)) { pen.DashStyle = DashStyle.Dash; g.DrawRectangle(pen, r); }
-                        DrawSizeLabel(g, r);
-                    }
-                }
-                else if (selecting && freePoints.Count > 2)
-                {
-                    g.FillRectangle(dim, ClientRectangle);
-                    using (var path = new GraphicsPath())
-                    {
-                        path.AddPolygon(freePoints.ToArray());
-                        var old = g.Clip;
-                        g.SetClip(path);
-                        g.DrawImageUnscaled(shot, 0, 0);
-                        g.Clip = old;
-                        using (var pen = new Pen(Color.White, 2)) g.DrawPath(pen, path);
-                    }
-                }
-                else if (mode == CaptureMode.Window && !hoverWindow.IsEmpty)
-                {
-                    g.FillRectangle(dim, ClientRectangle);
-                    var r = new Rectangle(hoverWindow.X - origin.X, hoverWindow.Y - origin.Y, hoverWindow.Width, hoverWindow.Height);
-                    g.DrawImage(shot, r, r, GraphicsUnit.Pixel);
-                    using (var pen = new Pen(Color.FromArgb(0, 120, 215), 3)) g.DrawRectangle(pen, r);
-                }
-                else
-                {
-                    g.FillRectangle(dim, ClientRectangle);
-                    DrawHint(g);
+                    g.DrawImage(bright, r, r, GraphicsUnit.Pixel);
+                    using (var pen = new Pen(mode == CaptureMode.Record ? Color.Red : Color.White, 1)) { pen.DashStyle = DashStyle.Dash; g.DrawRectangle(pen, r); }
+                    DrawSizeLabel(g, r);
                 }
             }
+            else if (selecting && freePoints.Count > 2)
+            {
+                using (var path = new GraphicsPath())
+                {
+                    path.AddPolygon(freePoints.ToArray());
+                    path.FillMode = FillMode.Winding;
+                    using (var tb = new TextureBrush(bright)) g.FillPath(tb, path);   // preenche com a captura (recortar por regiao era lento)
+                    using (var pen = new Pen(Color.White, 2)) g.DrawPath(pen, path);
+                }
+            }
+            else if (mode == CaptureMode.Window && !hoverWindow.IsEmpty)
+            {
+                var r = WindowLocal(hoverWindow);
+                g.DrawImage(bright, r, r, GraphicsUnit.Pixel);
+                using (var pen = new Pen(Color.FromArgb(0, 120, 215), 3)) g.DrawRectangle(pen, r);
+            }
+            else DrawHint(g);
             g.SmoothingMode = SmoothingMode.AntiAlias;
             DrawBar(g);
             if (LoupeVisible) DrawLoupe(g);
