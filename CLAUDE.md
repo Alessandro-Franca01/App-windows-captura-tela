@@ -31,7 +31,9 @@ O `csc` 4.0 so entende C# 5. **Nao use**: `?.`, `??=`, `$"..."` (interpolacao), 
 | `MainForm.cs` | Janela principal, barras, bandeja, atalhos globais, fluxo de captura |
 | `OverlayForm.cs` | Tela congelada para selecionar a area; barra de modos; lupa |
 | `Canvas.cs` + `Annotations.cs` | Editor: anotacoes, historico desfazer/refazer, zoom, `Flatten()` |
-| `ScrollCapture.cs` | Captura com rolagem (rola com a roda do mouse e costura por hash de linhas) |
+| `ScrollCapture.cs` | Rolagem automatica (roda do mouse) e costura por hash de linhas (`FindShift`, `Stitch`) |
+| `ScrollSession.cs` + `ScrollManualForm.cs` | Rolagem manual: quadros estaveis e alinhados viram trechos; painel de controle |
+| `RegionFrame.cs` | Moldura vermelha, posicao dos paineis e `IStoppable` (atalho global encerra a sessao) |
 | `RecorderForm.cs` + `GifWriter.cs` | Gravacao em GIF; encoder GIF proprio (median-cut + LZW) |
 | `Ocr.cs` | OCR via `Windows.Media.Ocr` chamado por PowerShell |
 | `Settings.cs` + `SettingsForm.cs` | Configuracoes em `CapturaTela.ini` ao lado do `.exe` |
@@ -81,3 +83,8 @@ Toda acao sensivel da CLI passa por `Cli.Gate.Require(chave, chaveSempre, descri
 - Ao adicionar uma ferramenta: `BuildTools` (parametros e descricao), `docs/MCP.md`, e um teste em `tests/McpTests.cs` (`WithSession` isola permissoes e gate).
 - stdout e o canal do protocolo: **nunca** escreva nada nele fora de `McpServer` (nada de `Console.WriteLine` no modo `mcp`).
 - `McpSession.Handle(linha)` e testavel sem processo filho.
+
+## Modos de captura
+`CaptureMode` (Native.cs) e gravado em `CapturaTela.ini`: **so acrescente valores no fim** (ex.: `ScrollManual = 6`). A ordem que o usuario ve (lista, barra do overlay, teclas 1-N) vem de `ModeList.Order/Names`; ao criar um modo, atualize as duas e o intervalo valido em `Settings.cs`.
+- Paineis do proprio app que ficam sobre a tela capturada devem chamar `Native.ExcludeFromCapture(Handle)` (e usar `RegionFrame.PanelLocation` como alternativa em Windows antigos).
+- Sessoes longas (GIF, rolagem manual) implementam `IStoppable` para o atalho global poder encerra-las (`MainForm.activeSession`).

@@ -10,7 +10,7 @@ namespace CapturaTela
 {
     // Painel de gravacao de GIF: mostra a moldura vermelha ao redor da area (fora dela, para
     // nao aparecer no video) e um pequeno painel com Iniciar / Parar.
-    class RecorderForm : Form
+    class RecorderForm : Form, IStoppable
     {
         const int Fps = 10, MaxSeconds = 30, MaxWidth = 960, FrameBorder = 3;
 
@@ -86,6 +86,12 @@ namespace CapturaTela
 
         public void RequestStop() { if (recording) StopRecording(); }
 
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            Native.ExcludeFromCapture(Handle);   // o painel nunca aparece no GIF
+        }
+
         void StartRecording()
         {
             recording = true;
@@ -142,46 +148,5 @@ namespace CapturaTela
             g.DrawPolygon(Pens.Black, pts);
         }
 
-        // Moldura vermelha que nao recebe cliques nem foco.
-        class RegionFrame : Form
-        {
-            readonly int border;
-
-            public RegionFrame(Rectangle r, int border)
-            {
-                this.border = border;
-                FormBorderStyle = FormBorderStyle.None;
-                ShowInTaskbar = false;
-                TopMost = true;
-                StartPosition = FormStartPosition.Manual;
-                BackColor = Color.Magenta;
-                TransparencyKey = Color.Magenta;
-                var b = r; b.Inflate(border, border);
-                Bounds = b;
-            }
-
-            protected override bool ShowWithoutActivation { get { return true; } }
-
-            protected override CreateParams CreateParams
-            {
-                get
-                {
-                    var cp = base.CreateParams;
-                    cp.ExStyle |= 0x80000 | 0x20 | 0x80 | 0x08000000; // layered, click-through, toolwindow, noactivate
-                    return cp;
-                }
-            }
-
-            protected override void OnPaint(PaintEventArgs e)
-            {
-                using (var br = new SolidBrush(Color.Red))
-                {
-                    e.Graphics.FillRectangle(br, 0, 0, Width, border);
-                    e.Graphics.FillRectangle(br, 0, Height - border, Width, border);
-                    e.Graphics.FillRectangle(br, 0, 0, border, Height);
-                    e.Graphics.FillRectangle(br, Width - border, 0, border, Height);
-                }
-            }
-        }
     }
 }
