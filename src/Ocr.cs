@@ -110,10 +110,10 @@ $result = Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult]
                 Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical,
                 Dock = DockStyle.Fill, Text = text.Replace("\r\n", "\n").Replace("\n", "\r\n")
             };
-            var bottom = new Panel { Dock = DockStyle.Bottom, Height = 44 };
-            var copy = new Button { Text = "Copiar de novo", Left = 12, Top = 8, Width = 120, Height = 28 };
+            var bottom = new Panel { Dock = DockStyle.Bottom, Height = 52 };
+            var copy = new FlatButton { Text = "Copiar de novo", Left = 12, Top = 6, Width = 150, Height = 34, Icon = IconKind.Copy };
             copy.Click += delegate { try { Clipboard.SetText(box.Text); } catch { } };
-            var close = new Button { Text = "Fechar", Width = 90, Height = 28, Top = 8, Anchor = AnchorStyles.Top | AnchorStyles.Right, DialogResult = DialogResult.OK };
+            var close = new FlatButton { Text = "Fechar", Width = 100, Height = 34, Top = 6, Anchor = AnchorStyles.Top | AnchorStyles.Right, Variant = ButtonVariant.Primary, DialogResult = DialogResult.OK };
             close.Left = bottom.Width - close.Width - 12;
             bottom.Controls.Add(copy); bottom.Controls.Add(close);
             Controls.Add(box); Controls.Add(bottom);

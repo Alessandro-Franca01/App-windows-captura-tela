@@ -42,6 +42,15 @@ namespace CapturaTela
         public static Color DisabledInk { get { return IsDark ? Color.FromArgb(0x78, 0x78, 0x78) : Color.FromArgb(0x9A, 0x9A, 0x9A); } }
 
         [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)] static extern int SetWindowTheme(IntPtr hwnd, string subAppName, string subIdList);
+
+        // Barras de rolagem, listas e campos nativos ficam escuros no tema escuro (Windows 10 1809+ / 11).
+        public static void NativeTheme(Control c, bool dark)
+        {
+            Action apply = delegate { try { SetWindowTheme(c.Handle, dark ? "DarkMode_Explorer" : "Explorer", null); } catch { } };
+            if (c.IsHandleCreated) apply();
+            else c.HandleCreated += delegate { apply(); };
+        }
 
         public static bool IsDark
         {
@@ -73,6 +82,7 @@ namespace CapturaTela
         public static void Apply(Form form)
         {
             bool dark = IsDark;
+            if (!(form is MainForm)) form.Icon = AppIcon.Get(SystemInformation.SmallIconSize);   // todas as janelas com o icone do app
             form.BackColor = dark ? DarkBack : SystemColors.Control;
             form.ForeColor = dark ? DarkText : SystemColors.ControlText;
             Walk(form, dark);
@@ -89,8 +99,9 @@ namespace CapturaTela
         {
             foreach (Control child in c.Controls)
             {
-                if (child is EmptyState) continue;   // desenha as proprias cores (fica sobre o fundo escuro da area de edicao)
+                if (child is EmptyState || child is FlatButton) continue;   // desenha as proprias cores (fica sobre o fundo escuro da area de edicao)
                 var btn = child as Button;
+                if (child is TextBox || child is ListView || child is RichTextBox || child is ListBox || child is ComboBox) NativeTheme(child, dark);
                 var txt = child as TextBox;
                 var cmb = child as ComboBox;
                 if (btn != null)

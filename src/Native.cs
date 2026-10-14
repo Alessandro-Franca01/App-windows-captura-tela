@@ -24,6 +24,20 @@ namespace CapturaTela
             "Retângulo", "Forma livre", "Janela", "Tela inteira", "Rolagem automática", "Rolagem manual", "Gravar GIF"
         };
 
+        public static IconKind IconOf(CaptureMode m)
+        {
+            switch (m)
+            {
+                case CaptureMode.Freeform: return IconKind.ModeFree;
+                case CaptureMode.Window: return IconKind.ModeWindow;
+                case CaptureMode.FullScreen: return IconKind.ModeScreen;
+                case CaptureMode.Scroll: return IconKind.ScrollAuto;
+                case CaptureMode.ScrollManual: return IconKind.ScrollManual;
+                case CaptureMode.Record: return IconKind.Gif;
+                default: return IconKind.ModeRect;
+            }
+        }
+
         public static int IndexOf(CaptureMode m)
         {
             int i = Array.IndexOf(Order, m);

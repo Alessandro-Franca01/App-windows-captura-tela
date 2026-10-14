@@ -93,3 +93,11 @@ Toda acao sensivel da CLI passa por `Cli.Gate.Require(chave, chaveSempre, descri
 ## Guia do usuario
 `docs/GUIA.md` e a **unica fonte** da ajuda: o `build.bat` o embute no `.exe` e a janela de Ajuda (F1) mostra cada `## secao` como um topico. Escreva em portugues simples, sem tabelas nem blocos de codigo (a janela mostra texto puro; `**negrito**`, crases e `- ` de listas sao convertidos).
 - **Ao mudar algo que o usuario ve** (modo, botao, atalho, configuracao, mensagem de erro comum), atualize o guia no mesmo PR. `tests/HelpTests.cs` confere que o guia continua carregando.
+
+## Camada visual (nao desenhe controles "na mao" nos formularios)
+- **Cores**: use os tokens de `Theme` (`Surface`, `Ink`, `Muted`, `Success`, `Danger`, `Warning`, `AccentStrong`, `AccentText`, `BarBack`, `Hover`...) em vez de `Color.FromArgb(...)`. Eles tem contraste >= 4,5:1 nos dois temas (`tests/VisualTests.cs` confere). Estado nunca so por cor: use icone + texto.
+- **Icones**: `Icons.Draw(g, IconKind.X, rect, cor)` (vetorial, grade de 24). Para um icone novo, acrescente o valor em `IconKind` e o desenho em `Icons.Shape`; o teste confere que desenha algo.
+- **Barras e menus**: `ToolStrip` passa por `Theme.Apply(strip, dark)` (usa `AppRenderer`). Item com `Tag = IconKind.X` e `Image = Icons.Placeholder(px)` recebe o icone no tema/estado certo; botao principal: `Name = "primary"`. Listas de opcoes em barra: `ChoiceButton` (nao use `ToolStripComboBox`: fica branco no escuro).
+- **Botoes de dialogo**: `FlatButton` (`Variant` Normal/Primary/Danger/Subtle, `Icon`); os `Button` nativos nao seguem o tema.
+- **Dialogos**: tamanhos em pixels de 96 dpi e `Theme.ScaleForDpi(this)` + `Theme.Apply(this)` no fim do construtor; alvos clicaveis >= 32 px.
+- **Prints para revisao**: `gerar-prints.bat` (branch do design) abre as telas reais; compare antes/depois em `docs/design/`.

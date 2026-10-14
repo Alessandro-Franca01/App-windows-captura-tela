@@ -27,6 +27,7 @@ namespace CapturaTela
         int hoverButton = -1;
         Rectangle hoverWindow = Rectangle.Empty;
         Rectangle lastLoupe = Rectangle.Empty;
+        float sc = 1f;                         // escala do Windows (DPI / 96)
 
         // saidas
         public Bitmap Result;                  // captura pronta (retangulo, forma livre, janela, tela inteira)
@@ -46,6 +47,7 @@ namespace CapturaTela
             DoubleBuffered = true;
             Cursor = Cursors.Cross;
             KeyPreview = true;
+            using (var gdi = CreateGraphics()) sc = gdi.DpiX / 96f;
             LayoutBar();
             Shown += delegate
             {
@@ -61,15 +63,16 @@ namespace CapturaTela
         {
             barButtons.Clear();
             var scr = Screen.PrimaryScreen.Bounds;
-            // largura de cada botao = largura do texto + folga, para nada quebrar em duas linhas
-            int h = 36, gap = 4, pad = 32, closeW = 44;
+            // cada botao = icone + nome + tecla de atalho; a largura vem do texto (nada quebra em duas linhas)
+            int h = (int)(40 * sc), gap = (int)(4 * sc), padX = (int)(14 * sc), icon = (int)(20 * sc), g1 = (int)(8 * sc), digitW = (int)(14 * sc), closeW = (int)(44 * sc);
             var widths = new int[ModeNames.Length];
             using (var g = CreateGraphics())
             using (var f = new Font("Segoe UI", 9.5f))
-                for (int i = 0; i < widths.Length; i++) widths[i] = (int)Math.Ceiling(g.MeasureString(ModeNames[i], f).Width) + pad;
+                for (int i = 0; i < widths.Length; i++)
+                    widths[i] = padX + icon + g1 + TextRenderer.MeasureText(g, ModeNames[i], f, new Size(1000, 100), TextFormatFlags.NoPadding).Width + g1 + digitW + padX;
             int total = closeW + gap * widths.Length;
             foreach (int wd in widths) total += wd;
-            int x = scr.X - origin.X + (scr.Width - total) / 2, y = scr.Y - origin.Y + 14;
+            int x = scr.X - origin.X + (scr.Width - total) / 2, y = scr.Y - origin.Y + (int)(18 * sc);
             for (int i = 0; i < widths.Length; i++) { barButtons.Add(new Rectangle(x, y, widths[i], h)); x += widths[i] + gap; }
             barButtons.Add(new Rectangle(x, y, closeW, h)); // fechar
         }
@@ -81,11 +84,11 @@ namespace CapturaTela
                 var r = barButtons[0];
                 var last = barButtons[barButtons.Count - 1];
                 var b = Rectangle.FromLTRB(r.Left, r.Top, last.Right, last.Bottom);
-                b.Inflate(8, 8);
+                int pad = (int)(6 * sc);
+                b.Inflate(pad, pad);
                 return b;
             }
         }
-
         int ButtonAt(Point p)
         {
             for (int i = 0; i < barButtons.Count; i++) if (barButtons[i].Contains(p)) return i;
@@ -330,43 +333,76 @@ namespace CapturaTela
             if (LoupeVisible) DrawLoupe(g);
         }
 
+        // ---- HUD: barra de modos, dica, rotulo de tamanho e lupa (mesmo estilo, cantos arredondados) ----
+
+        static readonly Color HudBack = Color.FromArgb(236, 28, 28, 28);
+        static readonly Color HudMuted = Color.FromArgb(0xB8, 0xB8, 0xB8);
+
+        void FillHud(Graphics g, RectangleF r, float radius, int alpha)
+        {
+            using (var path = AppRenderer.RoundPath(r, radius))
+            {
+                using (var b = new SolidBrush(Color.FromArgb(alpha, 28, 28, 28))) g.FillPath(b, path);
+                using (var p = new Pen(Color.FromArgb(46, 255, 255, 255), 1f)) g.DrawPath(p, path);
+            }
+        }
+
         void DrawHint(Graphics g)
         {
-            string hint = mode == CaptureMode.Window ? "Clique na janela para capturar"
+            string main = mode == CaptureMode.Window ? "Clique na janela para capturar"
                         : mode == CaptureMode.Freeform ? "Desenhe a forma livre"
                         : mode == CaptureMode.Scroll ? "Selecione a área com conteúdo rolável (o app rola sozinho com a roda do mouse)"
                         : mode == CaptureMode.ScrollManual ? "Selecione a área com conteúdo rolável (você mesmo rola, devagar, com a roda do mouse)"
                         : mode == CaptureMode.Record ? "Selecione a área para gravar em GIF"
                         : "Arraste para selecionar a área";
-            hint += "  -  Esc cancela  -  setas ajustam 1 px";
-            using (var f = new Font("Segoe UI", 12))
+            const string sub = "Esc cancela  ·  setas ajustam 1 px";
+            using (var fm = new Font("Segoe UI Semibold", 11.5f))
+            using (var fs = new Font("Segoe UI", 9.5f))
             {
-                var sz = g.MeasureString(hint, f);
+                var flags = TextFormatFlags.NoPadding | TextFormatFlags.SingleLine;
+                var sm = TextRenderer.MeasureText(g, main, fm, new Size(2000, 100), flags);
+                var ss = TextRenderer.MeasureText(g, sub, fs, new Size(2000, 100), flags);
+                int padX = (int)(18 * sc), padY = (int)(12 * sc), gap = (int)(4 * sc);
+                int w = Math.Max(sm.Width, ss.Width) + padX * 2, h = sm.Height + gap + ss.Height + padY * 2;
                 var bar = BarBounds;
-                float x = bar.X + (bar.Width - sz.Width) / 2, y = bar.Bottom + 8;
-                using (var bg = new SolidBrush(Color.FromArgb(200, 0, 0, 0)))
-                    g.FillRectangle(bg, x - 10, y - 4, sz.Width + 20, sz.Height + 8);
-                g.DrawString(hint, f, Brushes.White, x, y);
+                var r = new Rectangle(bar.X + (bar.Width - w) / 2, bar.Bottom + (int)(10 * sc), w, h);
+                FillHud(g, r, 10 * sc, 220);
+                TextRenderer.DrawText(g, main, fm, new Rectangle(r.X, r.Y + padY, r.Width, sm.Height), Color.White, flags | TextFormatFlags.HorizontalCenter);
+                TextRenderer.DrawText(g, sub, fs, new Rectangle(r.X, r.Y + padY + sm.Height + gap, r.Width, ss.Height), HudMuted, flags | TextFormatFlags.HorizontalCenter);
             }
         }
 
         void DrawBar(Graphics g)
         {
             var bb = BarBounds;
-            using (var bg = new SolidBrush(Color.FromArgb(235, 28, 28, 28)))
-                g.FillRectangle(bg, bb);
+            FillHud(g, bb, 14 * sc, 236);
+            int padX = (int)(14 * sc), icon = (int)(20 * sc), g1 = (int)(8 * sc);
+            var flags = TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.Left;
             using (var f = new Font("Segoe UI", 9.5f))
-            using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+            using (var fb = new Font("Segoe UI Semibold", 9.5f))
+            using (var fd = new Font("Segoe UI", 8.5f))
             {
                 for (int i = 0; i < barButtons.Count; i++)
                 {
                     var r = barButtons[i];
-                    bool selected = i == ModeList.IndexOf(mode), hover = i == hoverButton;
+                    bool selected = i == ModeList.IndexOf(mode) && i < ModeNames.Length, hover = i == hoverButton;
                     if (selected || hover)
-                        using (var b = new SolidBrush(selected ? Color.FromArgb(0, 120, 215) : Color.FromArgb(70, 70, 70)))
-                            g.FillRectangle(b, r);
-                    string label = i < ModeNames.Length ? ModeNames[i] : "X";
-                    g.DrawString(label, f, Brushes.White, r, sf);
+                        using (var path = AppRenderer.RoundPath(new RectangleF(r.X, r.Y, r.Width, r.Height), 9 * sc))
+                        using (var b = new SolidBrush(selected ? Theme.AccentStrong : Color.FromArgb(46, 255, 255, 255)))
+                            g.FillPath(b, path);
+
+                    if (i >= ModeNames.Length)
+                    {
+                        int sz = (int)(18 * sc);
+                        Icons.Draw(g, IconKind.Close, new Rectangle(r.X + (r.Width - sz) / 2, r.Y + (r.Height - sz) / 2, sz, sz), Color.White);
+                        continue;
+                    }
+                    Icons.Draw(g, ModeList.IconOf(ModeList.Order[i]), new Rectangle(r.X + padX, r.Y + (r.Height - icon) / 2, icon, icon), Color.White);
+                    int tx = r.X + padX + icon + g1;
+                    TextRenderer.DrawText(g, ModeNames[i], selected ? fb : f, new Rectangle(tx, r.Y, r.Width, r.Height), Color.White, flags);
+                    var dsz = TextRenderer.MeasureText(g, (i + 1).ToString(), fd, new Size(100, 100), TextFormatFlags.NoPadding);
+                    TextRenderer.DrawText(g, (i + 1).ToString(), fd, new Rectangle(r.Right - padX - dsz.Width + (int)(2 * sc), r.Y, dsz.Width + 4, r.Height),
+                        selected ? Color.FromArgb(210, 255, 255, 255) : HudMuted, flags);
                 }
             }
         }
@@ -375,21 +411,28 @@ namespace CapturaTela
         {
             var panel = LoupeRect();
             int size = LoupeCells * LoupeScale;
-            var box = new Rectangle(panel.X + (panel.Width - size) / 2, panel.Y, size, size);   // lupa centralizada no painel
+            var box = new Rectangle(panel.X + (panel.Width - size) / 2, panel.Y + 8, size, size);   // lupa centralizada no painel
             int half = LoupeCells / 2;
             var src = new Rectangle(mouse.X - half, mouse.Y - half, LoupeCells, LoupeCells);
+            var full = new Rectangle(panel.X, panel.Y, panel.Width, panel.Height + 14);
+            FillHud(g, full, 10 * sc, 244);
 
             var oldI = g.InterpolationMode; var oldP = g.PixelOffsetMode; var oldS = g.SmoothingMode;
-            g.InterpolationMode = InterpolationMode.NearestNeighbor;
-            g.PixelOffsetMode = PixelOffsetMode.Half;
-            g.SmoothingMode = SmoothingMode.None;
-            g.FillRectangle(Brushes.Black, panel.X - 2, panel.Y - 2, panel.Width + 4, panel.Height + 4);
-            g.DrawImage(shot, new Rectangle(box.X, box.Y, size, size), src, GraphicsUnit.Pixel);
+            using (var clip = AppRenderer.RoundPath(box, 6 * sc))
+            {
+                var oldClip = g.Clip;
+                g.SetClip(clip, CombineMode.Replace);
+                g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                g.PixelOffsetMode = PixelOffsetMode.Half;
+                g.DrawImage(shot, box, src, GraphicsUnit.Pixel);
+                g.Clip = oldClip;
+            }
             g.InterpolationMode = oldI; g.PixelOffsetMode = oldP;
 
             // pixel central e mira
             int c = half * LoupeScale;
-            using (var pen = new Pen(Color.FromArgb(200, 255, 255, 255)))
+            g.SmoothingMode = SmoothingMode.None;
+            using (var pen = new Pen(Color.FromArgb(210, 255, 255, 255)))
             {
                 g.DrawRectangle(pen, box.X + c, box.Y + c, LoupeScale, LoupeScale);
                 g.DrawLine(pen, box.X, box.Y + c + LoupeScale / 2, box.X + c, box.Y + c + LoupeScale / 2);
@@ -397,30 +440,42 @@ namespace CapturaTela
                 g.DrawLine(pen, box.X + c + LoupeScale / 2, box.Y, box.X + c + LoupeScale / 2, box.Y + c);
                 g.DrawLine(pen, box.X + c + LoupeScale / 2, box.Y + c + LoupeScale, box.X + c + LoupeScale / 2, box.Y + size);
             }
+            g.SmoothingMode = SmoothingMode.AntiAlias;
 
             Color px = Color.Black;
             if (mouse.X >= 0 && mouse.Y >= 0 && mouse.X < shot.Width && mouse.Y < shot.Height) px = shot.GetPixel(mouse.X, mouse.Y);
-            string text = (mouse.X + origin.X) + ", " + (mouse.Y + origin.Y) + "   #" + px.R.ToString("X2") + px.G.ToString("X2") + px.B.ToString("X2");
-            using (var f = new Font("Segoe UI", 9))
-            using (var sw = new SolidBrush(px))
+            string coords = (mouse.X + origin.X) + ", " + (mouse.Y + origin.Y);
+            string hex = "#" + px.R.ToString("X2") + px.G.ToString("X2") + px.B.ToString("X2");
+            int sw = 18, sy = box.Bottom + 10;
+            using (var swatch = AppRenderer.RoundPath(new RectangleF(panel.X + 12, sy, sw, sw), 4))
             {
-                g.FillRectangle(sw, panel.X + 6, panel.Y + size + 6, 18, 18);
-                g.DrawRectangle(Pens.White, panel.X + 6, panel.Y + size + 6, 18, 18);
-                g.DrawString(text, f, Brushes.White, panel.X + 30, panel.Y + size + 7);
+                using (var b = new SolidBrush(px)) g.FillPath(b, swatch);
+                using (var p = new Pen(Color.FromArgb(170, 255, 255, 255), 1f)) g.DrawPath(p, swatch);
+            }
+            using (var f = new Font("Segoe UI Semibold", 9f))
+            using (var fm = new Font("Segoe UI", 9f))
+            {
+                var fl = TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine;
+                TextRenderer.DrawText(g, coords, f, new Rectangle(panel.X + 38, sy - 1, 100, sw + 2), Color.White, fl);
+                TextRenderer.DrawText(g, hex, fm, new Rectangle(panel.X + 38 + 98, sy - 1, 70, sw + 2), HudMuted, fl);
             }
             g.SmoothingMode = oldS;
         }
 
         void DrawSizeLabel(Graphics g, Rectangle r)
         {
-            string t = r.Width + " x " + r.Height;
-            using (var f = new Font("Segoe UI", 9))
+            string t = r.Width + " × " + r.Height + " px";
+            using (var f = new Font("Segoe UI Semibold", 9.5f))
             {
-                var sz = g.MeasureString(t, f);
-                float y = r.Bottom + 4;
-                if (y + sz.Height > ClientSize.Height) y = r.Top - sz.Height - 4;
-                g.FillRectangle(Brushes.Black, r.X, y, sz.Width + 6, sz.Height);
-                g.DrawString(t, f, Brushes.White, r.X + 3, y);
+                var flags = TextFormatFlags.NoPadding | TextFormatFlags.SingleLine;
+                var sz = TextRenderer.MeasureText(g, t, f, new Size(500, 100), flags);
+                int padX = (int)(10 * sc), padY = (int)(5 * sc);
+                int w = sz.Width + padX * 2, h = sz.Height + padY * 2;
+                int y = r.Bottom + (int)(8 * sc);
+                if (y + h > ClientSize.Height) y = r.Top - h - (int)(8 * sc);
+                var tag = new Rectangle(r.X, y, w, h);
+                FillHud(g, tag, 6 * sc, 230);
+                TextRenderer.DrawText(g, t, f, new Rectangle(tag.X + padX, tag.Y + padY, sz.Width, sz.Height), Color.White, flags);
             }
         }
     }

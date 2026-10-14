@@ -15,7 +15,7 @@ namespace CapturaTela
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
-            ClientSize = new Size(360, 150);
+            ClientSize = new Size(360, 158);
             Font = new Font("Segoe UI", 9);
 
             box.Multiline = true; box.AcceptsReturn = true;
@@ -23,7 +23,7 @@ namespace CapturaTela
             Controls.Add(box);
             var hint = new Label { Text = "Enter = nova linha. Ctrl+Enter confirma.", Left = 12, Top = 112, Width = 220, ForeColor = Theme.Muted };
             Controls.Add(hint);
-            var ok = new Button { Text = "OK", Left = 273, Top = 112, Width = 75, DialogResult = DialogResult.OK };
+            var ok = new FlatButton { Text = "OK", Left = 258, Top = 108, Width = 90, Height = 34, Variant = ButtonVariant.Primary, DialogResult = DialogResult.OK };
             Controls.Add(ok);
             AcceptButton = null;
             box.KeyDown += delegate(object s, KeyEventArgs e)
