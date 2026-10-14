@@ -18,6 +18,7 @@ namespace CapturaTela
         bool firstShow = true;
         bool exiting;
         bool capturing;
+        RecorderForm recorder;
 
         readonly ToolStrip bar = new ToolStrip();
         readonly ToolStrip tools = new ToolStrip();
@@ -54,7 +55,7 @@ namespace CapturaTela
             bar.Items.Add(newBtn);
 
             modeBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            modeBox.Items.AddRange(new object[] { "Retangulo", "Forma livre", "Janela", "Tela inteira" });
+            modeBox.Items.AddRange(new object[] { "Retangulo", "Forma livre", "Janela", "Tela inteira", "Rolagem", "Gravar GIF" });
             modeBox.SelectedIndex = settings.Mode;
             modeBox.ToolTipText = "Modo de captura";
             modeBox.Width = 110;
@@ -163,6 +164,8 @@ namespace CapturaTela
             menu.Items.Add("Capturar forma livre", null, delegate { StartCapture(1); });
             menu.Items.Add("Capturar janela", null, delegate { StartCapture(2); });
             menu.Items.Add("Capturar tela inteira", null, delegate { StartCapture(3); });
+            menu.Items.Add("Captura com rolagem", null, delegate { StartCapture(4); });
+            menu.Items.Add("Gravar GIF", null, delegate { StartCapture(5); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Configuracoes...", null, delegate { ShowMain(); OpenSettings(); });
             menu.Items.Add("Sair", null, delegate { exiting = true; Close(); });
@@ -350,7 +353,12 @@ namespace CapturaTela
 
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == Native.WM_HOTKEY) StartCapture(modeBox.SelectedIndex);
+            if (m.Msg == Native.WM_HOTKEY)
+            {
+                // durante uma gravacao o atalho global para a gravacao
+                if (recorder != null) recorder.RequestStop();
+                else StartCapture(modeBox.SelectedIndex);
+            }
             base.WndProc(ref m);
         }
 
@@ -414,15 +422,86 @@ namespace CapturaTela
                 }
                 else
                 {
+                    CaptureMode chosen;
+                    Rectangle area;
                     using (var ov = new OverlayForm(shot, mode))
                     {
-                        if (ov.ShowDialog() == DialogResult.OK) result = ov.Result;
+                        if (ov.ShowDialog() != DialogResult.OK) return false;
+                        result = ov.Result; chosen = ov.ChosenMode; area = ov.SelectedRect;
+                    }
+                    if (chosen == CaptureMode.Scroll || chosen == CaptureMode.Record)
+                    {
+                        // deixa o desktop se redesenhar depois de fechar o overlay
+                        System.Threading.Thread.Sleep(250);
+                        Application.DoEvents();
+                        if (chosen == CaptureMode.Scroll) result = ScrollCapture.Run(area);
+                        else return RecordGif(area);
                     }
                 }
                 if (result == null) return false;
                 ShowResult(result);
                 return true;
             }
+        }
+
+        // Grava a area em GIF e salva. Devolve true se gerou o arquivo.
+        bool RecordGif(Rectangle area)
+        {
+            List<Bitmap> frames;
+            int delay;
+            using (var rec = new RecorderForm(area))
+            {
+                recorder = rec;
+                try
+                {
+                    if (rec.ShowDialog() != DialogResult.OK) return false;
+                }
+                finally { recorder = null; }
+                frames = rec.Frames; delay = rec.DelayMs;
+            }
+
+            string file = null;
+            try
+            {
+                if (settings.AutoSave)
+                {
+                    Directory.CreateDirectory(settings.AutoSaveDir);
+                    file = Path.Combine(settings.AutoSaveDir, "Gravacao " + DateTime.Now.ToString("yyyy-MM-dd HHmmss") + ".gif");
+                }
+                else
+                {
+                    using (var d = new SaveFileDialog())
+                    {
+                        d.Title = "Salvar gravacao";
+                        d.Filter = "GIF animado (*.gif)|*.gif";
+                        d.FileName = "Gravacao " + DateTime.Now.ToString("yyyy-MM-dd HHmmss");
+                        if (d.ShowDialog() != DialogResult.OK) return false;
+                        file = d.FileName;
+                    }
+                }
+                Cursor = Cursors.WaitCursor;
+                GifWriter.Save(file, frames, delay);
+                long kb = new FileInfo(file).Length / 1024;
+                statusLabel.Text = "GIF salvo em " + file + " (" + frames.Count + " quadros, " + kb + " KB)";
+                try
+                {
+                    var list = new System.Collections.Specialized.StringCollection();
+                    list.Add(file);
+                    Clipboard.SetFileDropList(list);
+                }
+                catch { }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Nao foi possivel salvar o GIF:\n" + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+                foreach (var f in frames) f.Dispose();
+            }
+            return true;
         }
 
         void ShowResult(Bitmap bmp)
