@@ -5,6 +5,8 @@
 > **O usuario decide tudo.** A primeira vez que a IA pede algo, aparece uma janela com *Permitir uma vez / Permitir sempre / Negar / Negar sempre*. Veja [PERMISSOES.md](PERMISSOES.md). Os botoes ficam ativos 1,2 s depois de abrir (para um Enter digitado em outra janela nao aprovar por acidente) e, sem resposta em 60 s, o pedido e negado.
 
 ## Instalar no cliente
+Passo a passo para usar em outros projetos (e exemplos prontos de `.mcp.json` e `CLAUDE.md`): veja a secao *Usar em outros projetos com o Claude Code* do [README](../README.md).
+
 Claude Code:
 ```
 claude mcp add captura-tela -- "C:\caminho\para\CapturaTelaCli.exe" mcp

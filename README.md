@@ -44,6 +44,27 @@ Referencia completa em [docs/CLI.md](docs/CLI.md).
 ## Uso por IA (MCP) e permissoes
 `CapturaTelaCli.exe mcp` e um servidor MCP: clientes de IA capturam janelas, fazem OCR e anotam imagens, **sempre com permissao do usuario** (uma vez / sempre / negar). Veja [docs/MCP.md](docs/MCP.md) e [docs/PERMISSOES.md](docs/PERMISSOES.md).
 
+## Usar em outros projetos com o Claude Code
+O Claude Code usa o app como um servidor MCP: ele pode **ver a tela** do seu programa (janela, OCR, GIF) enquanto testa ou desenvolve outro projeto. Nao e preciso copiar codigo para o outro projeto, so o `.exe`.
+
+**1. Uma vez, no seu computador**
+1. Crie uma pasta fixa, por exemplo `C:\Ferramentas\CapturaTela\`.
+2. Copie para ela `CapturaTelaCli.exe` **e** `CapturaTela.exe` (o segundo traz a tela *Configuracoes > Permissoes da IA*; os dois precisam ficar na mesma pasta para dividir o arquivo de permissoes).
+3. Registre o servidor para todos os seus projetos:
+```
+claude mcp add --scope user captura-tela -- "C:\Ferramentas\CapturaTela\CapturaTelaCli.exe" mcp
+```
+
+**2. Em cada projeto**
+1. Abra o Claude Code na pasta do projeto e digite `/mcp`: `captura-tela` deve aparecer conectado.
+2. Peca normalmente: *"abra o app, capture a janela dele e confira se o botao Salvar aparece"*.
+3. Na primeira vez de cada acao, o app abre uma janela de permissao: **Permitir uma vez**, **Permitir sempre**, **Negar** ou **Negar sempre**. A decisao e sua.
+
+**Opcional: equipe**
+Para que todos que clonarem o projeto ja recebam a configuracao, copie [docs/exemplos/mcp.json](docs/exemplos/mcp.json) para a raiz do projeto com o nome `.mcp.json` e peca a cada pessoa que defina a variavel de ambiente `CAPTURA_TELA` com a pasta do passo 1. Cole tambem o trecho de [docs/exemplos/CLAUDE-trecho.md](docs/exemplos/CLAUDE-trecho.md) no `CLAUDE.md` do projeto, para o Claude saber quando e como usar.
+
+Cuidados: o app so **le** a tela (nao clica nem digita); voce precisa estar no computador para responder aos pedidos de permissao (sem resposta em 60 s o pedido e negado); e as imagens vistas pela IA vao para o provedor do modelo, entao prefira capturar uma janela e esconda dados pessoais com `annotate`. Mais detalhes em [docs/MCP.md](docs/MCP.md) e [docs/PERMISSOES.md](docs/PERMISSOES.md).
+
 ## Testes
 ```
 test.bat
