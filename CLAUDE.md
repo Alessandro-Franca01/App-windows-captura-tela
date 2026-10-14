@@ -36,6 +36,7 @@ O `csc` 4.0 so entende C# 5. **Nao use**: `?.`, `??=`, `$"..."` (interpolacao), 
 | `RegionFrame.cs` | Moldura vermelha, posicao dos paineis e `IStoppable` (atalho global encerra a sessao) |
 | `RecorderForm.cs` + `GifWriter.cs` | Gravacao em GIF; encoder GIF proprio (median-cut + LZW) |
 | `Ocr.cs` | OCR via `Windows.Media.Ocr` chamado por PowerShell |
+| `HelpForm.cs` | Janela de Ajuda (F1): mostra `docs/GUIA.md`, embutido no .exe como recurso `guia.md` |
 | `Settings.cs` + `SettingsForm.cs` | Configuracoes em `CapturaTela.ini` ao lado do `.exe` |
 | `Theme.cs` | Tema claro/escuro e icone embutido |
 | `Native.cs` | P/Invoke (hotkeys, janelas, DWM, mouse) |
@@ -88,3 +89,7 @@ Toda acao sensivel da CLI passa por `Cli.Gate.Require(chave, chaveSempre, descri
 `CaptureMode` (Native.cs) e gravado em `CapturaTela.ini`: **so acrescente valores no fim** (ex.: `ScrollManual = 6`). A ordem que o usuario ve (lista, barra do overlay, teclas 1-N) vem de `ModeList.Order/Names`; ao criar um modo, atualize as duas e o intervalo valido em `Settings.cs`.
 - Paineis do proprio app que ficam sobre a tela capturada devem chamar `Native.ExcludeFromCapture(Handle)` (e usar `RegionFrame.PanelLocation` como alternativa em Windows antigos).
 - Sessoes longas (GIF, rolagem manual) implementam `IStoppable` para o atalho global poder encerra-las (`MainForm.activeSession`).
+
+## Guia do usuario
+`docs/GUIA.md` e a **unica fonte** da ajuda: o `build.bat` o embute no `.exe` e a janela de Ajuda (F1) mostra cada `## secao` como um topico. Escreva em portugues simples, sem tabelas nem blocos de codigo (a janela mostra texto puro; `**negrito**`, crases e `- ` de listas sao convertidos).
+- **Ao mudar algo que o usuario ve** (modo, botao, atalho, configuracao, mensagem de erro comum), atualize o guia no mesmo PR. `tests/HelpTests.cs` confere que o guia continua carregando.
