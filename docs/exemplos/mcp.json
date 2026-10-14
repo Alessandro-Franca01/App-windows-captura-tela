@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "captura-tela": {
-      "command": "${CAPTURA_TELA}\CapturaTelaCli.exe",
+      "command": "${CAPTURA_TELA}\\CapturaTelaCli.exe",
       "args": ["mcp"]
     }
   }
