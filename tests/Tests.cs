@@ -191,6 +191,87 @@ namespace CapturaTela.Tests
                     Assert.Equal(120, ScrollCapture.FindShift(ScrollCapture.RowHashes(a), ScrollCapture.RowHashes(b)), "deslocamento com cabecalho");
                 }
             });
+            TestRunner.Run("rolagem: texto repetitivo (poucas linhas unicas) e cabecalho/rodape fixos", delegate
+            {
+                // cada "linha de texto" tem 20 linhas de pixels; 17 iguais em todas as linhas e so 3 distintas (o numero)
+                Func<int, Bitmap> view = delegate(int firstLine)
+                {
+                    var v = new Bitmap(100, 800, PixelFormat.Format32bppArgb);
+                    for (int y = 0; y < 800; y++)
+                    {
+                        int line = firstLine + y / 20, r = y % 20;
+                        Color c = r < 17 ? Color.FromArgb(r * 10 % 256, 0, 0) : Color.FromArgb(r * 10 % 256, (line * 37) % 256, (line * 91 + r) % 256);
+                        for (int x = 0; x < 100; x++) v.SetPixel(x, y, c);
+                    }
+                    using (var g = Graphics.FromImage(v)) { g.FillRectangle(Brushes.Navy, 0, 0, 100, 60); g.FillRectangle(Brushes.Gray, 0, 760, 100, 40); }   // barras fixas
+                    return v;
+                };
+                using (var a = view(0)) using (var b = view(3))   // rolou 3 linhas = 60 px
+                    Assert.Equal(60, ScrollCapture.FindShift(ScrollCapture.RowHashes(a), ScrollCapture.RowHashes(b)), "deslocamento em texto repetitivo");
+            });
+
+            TestRunner.Run("rolagem: barra de rolagem e bordas moveis nao impedem o alinhamento", delegate
+            {
+                // reproduz o Bloco de Notas: so as colunas da barra de rolagem e das bordas mudam entre os quadros
+                Func<int, Bitmap> view = delegate(int firstLine)
+                {
+                    var v = new Bitmap(400, 600, PixelFormat.Format32bppArgb);
+                    for (int y = 0; y < 600; y++)
+                    {
+                        int line = firstLine + y / 20, r = y % 20;
+                        Color c = r < 17 ? Color.FromArgb(r * 10 % 256, 0, 0) : Color.FromArgb(r * 10 % 256, (line * 37) % 256, (line * 91 + r) % 256);
+                        for (int x = 0; x < 400; x++) v.SetPixel(x, y, c);
+                    }
+                    using (var g = Graphics.FromImage(v))
+                    {
+                        g.FillRectangle(Brushes.Black, 396 - 0, firstLine * 7, 3, 180);   // polegar da barra: muda de lugar
+                        g.FillRectangle(firstLine % 2 == 0 ? Brushes.Black : Brushes.White, 0, 0, 1, 600);   // borda que oscila
+                    }
+                    return v;
+                };
+                using (var a = view(0)) using (var b = view(4))
+                    Assert.Equal(80, ScrollCapture.FindShift(ScrollCapture.RowHashes(a), ScrollCapture.RowHashes(b)), "deslocamento com barra de rolagem movel");
+            });
+
+            TestRunner.Run("rolagem: costura com cabecalho e rodape fixos aparecendo uma unica vez", delegate
+            {
+                // pagina de 1000 linhas unicas; a janela mostra 230 linhas rolaveis entre um cabecalho (40) e um rodape (30)
+                var page = new Bitmap(120, 1000, PixelFormat.Format32bppArgb);
+                for (int y = 0; y < 1000; y++)
+                    for (int x = 0; x < 120; x++)
+                        page.SetPixel(x, y, Color.FromArgb((y * 37 + x * 11) % 256, (y * 91) % 256, (y * 13 + x) % 256));
+                Func<int, Bitmap> view = delegate(int top)
+                {
+                    var v = new Bitmap(120, 300, PixelFormat.Format32bppArgb);
+                    using (var g = Graphics.FromImage(v))
+                    {
+                        g.DrawImage(page, new Rectangle(0, 40, 120, 230), new Rectangle(0, top, 120, 230), GraphicsUnit.Pixel);
+                        g.FillRectangle(Brushes.Navy, 0, 0, 120, 40);
+                        g.FillRectangle(Brushes.Gray, 0, 270, 120, 30);
+                    }
+                    return v;
+                };
+                var frames = new List<Bitmap>(); var hashes = new List<ulong[]>(); var shifts = new List<int>();
+                foreach (int top in new[] { 0, 100, 200, 300, 400 })
+                {
+                    var f = view(top); var hh = ScrollCapture.RowHashes(f);
+                    if (frames.Count > 0) shifts.Add(ScrollCapture.FindShift(hashes[hashes.Count - 1], hh));
+                    frames.Add(f); hashes.Add(hh);
+                }
+                foreach (int s in shifts) Assert.Equal(100, s, "deslocamento de cada passo");
+                using (var result = ScrollCapture.Stitch(frames, shifts, hashes))
+                {
+                    Assert.Equal(40 + (230 + 400) + 30, result.Height, "altura = cabecalho + conteudo + rodape");
+                    Assert.Equal(Color.Navy.ToArgb(), result.GetPixel(5, 10).ToArgb(), "cabecalho no topo");
+                    Assert.Equal(Color.Gray.ToArgb(), result.GetPixel(5, result.Height - 5).ToArgb(), "rodape no fim");
+                    bool ok = true;
+                    for (int y = 0; y < 630 && ok; y += 7) ok = result.GetPixel(60, 40 + y) == page.GetPixel(60, y);
+                    Assert.True(ok, "o conteudo do meio e continuo, sem rodape repetido nem linhas perdidas");
+                }
+                foreach (var f in frames) f.Dispose();
+                page.Dispose();
+            });
+
         }
     }
 

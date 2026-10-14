@@ -79,6 +79,7 @@ namespace CapturaTela
             };
             Controls.AddRange(new Control[] { ok, cancel });
             AcceptButton = ok; CancelButton = cancel;
+            Theme.ScaleForDpi(this);
             Theme.Apply(this);
         }
 
@@ -160,6 +161,7 @@ namespace CapturaTela
             Controls.AddRange(new Control[] { ok, cancel });
             AcceptButton = ok; CancelButton = cancel;
             UpdateParam();
+            Theme.ScaleForDpi(this);
             Theme.Apply(this);
         }
 

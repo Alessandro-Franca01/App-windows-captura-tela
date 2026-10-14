@@ -14,7 +14,7 @@ namespace CapturaTela
 
         readonly Label countdown = new Label();
         readonly Timer timer = new Timer();
-        int left = TimeoutSeconds;
+        int left;
 
         public readonly Button OnceBtn = new Button(), AlwaysBtn = new Button(), DenyBtn = new Button(), DenyAlwaysBtn = new Button();
 
@@ -24,8 +24,11 @@ namespace CapturaTela
 
         public PermissionDialog(PromptRequest req) : this(req, DefaultArmMs) { }
 
-        public PermissionDialog(PromptRequest req, int armMs)
+        public PermissionDialog(PromptRequest req, int armMs) : this(req, armMs, TimeoutSeconds) { }
+
+        public PermissionDialog(PromptRequest req, int armMs, int timeoutSeconds)
         {
+            left = timeoutSeconds;
             Text = "Pedido de permissao";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
@@ -59,6 +62,7 @@ namespace CapturaTela
             CancelButton = DenyBtn;
 
             Controls.AddRange(new Control[] { who, what, hint, countdown, OnceBtn, AlwaysBtn, DenyBtn, DenyAlwaysBtn });
+            Theme.ScaleForDpi(this);
             Theme.Apply(this);
             what.ForeColor = Theme.IsDark ? Theme.DarkText : SystemColors.ControlText;
 

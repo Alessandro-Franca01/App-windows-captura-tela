@@ -39,6 +39,14 @@ namespace CapturaTela
             }
         }
 
+        // Dialogos tem tamanhos fixos em pixels: sem isto, com a tela em 125%/150% os textos crescem
+        // (o app e DPI-aware) e ficam cortados nos botoes e rotulos. Chamar no fim do construtor.
+        public static void ScaleForDpi(Form f)
+        {
+            f.AutoScaleDimensions = new SizeF(96f, 96f);
+            f.AutoScaleMode = AutoScaleMode.Dpi;
+        }
+
         // Aplica o tema a um formulario inteiro (controles filhos e barra de titulo).
         public static void Apply(Form form)
         {

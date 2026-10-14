@@ -119,6 +119,7 @@ $result = Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult]
             Controls.Add(box); Controls.Add(bottom);
             AcceptButton = close; CancelButton = close;
             box.Select(0, 0);
+            Theme.ScaleForDpi(this);
             Theme.Apply(this);
         }
     }
