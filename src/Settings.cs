@@ -81,7 +81,7 @@ namespace CapturaTela
             int n; uint u; bool b;
             switch (k)
             {
-                case "Mode": if (int.TryParse(v, NumberStyles.Integer, inv, out n) && n >= 0 && n <= 5) Mode = n; break;
+                case "Mode": if (int.TryParse(v, NumberStyles.Integer, inv, out n) && n >= 0 && n <= 6) Mode = n; break;
                 case "Delay": if (int.TryParse(v, NumberStyles.Integer, inv, out n) && n >= 0 && n <= 5) Delay = n; break;
                 case "PenColor": if (int.TryParse(v, NumberStyles.Integer, inv, out n)) PenColor = n; break;
                 case "PenWidth": if (int.TryParse(v, NumberStyles.Integer, inv, out n) && n >= 0 && n <= 3) PenWidth = n; break;

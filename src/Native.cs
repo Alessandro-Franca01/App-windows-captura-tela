@@ -7,7 +7,29 @@ using System.Text;
 
 namespace CapturaTela
 {
-    enum CaptureMode { Rectangle, Freeform, Window, FullScreen, Scroll, Record }
+    // Os valores sao gravados nas configuracoes: so acrescente no fim.
+    enum CaptureMode { Rectangle, Freeform, Window, FullScreen, Scroll, Record, ScrollManual }
+
+    // Ordem e nomes dos modos como o usuario os ve (lista da janela principal, barra e teclas 1-7 da selecao).
+    static class ModeList
+    {
+        public static readonly CaptureMode[] Order =
+        {
+            CaptureMode.Rectangle, CaptureMode.Freeform, CaptureMode.Window, CaptureMode.FullScreen,
+            CaptureMode.Scroll, CaptureMode.ScrollManual, CaptureMode.Record
+        };
+
+        public static readonly string[] Names =
+        {
+            "Retangulo", "Forma livre", "Janela", "Tela inteira", "Rolagem auto", "Rolagem manual", "Gravar GIF"
+        };
+
+        public static int IndexOf(CaptureMode m)
+        {
+            int i = Array.IndexOf(Order, m);
+            return i < 0 ? 0 : i;
+        }
+    }
 
     // Janela de topo visivel.
     class WindowInfo
@@ -42,6 +64,15 @@ namespace CapturaTela
         [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
         [DllImport("user32.dll")] public static extern void mouse_event(uint flags, int dx, int dy, int data, UIntPtr extra);
         [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vKey);
+
+        [DllImport("user32.dll")] static extern bool SetWindowDisplayAffinity(IntPtr hWnd, uint affinity);
+
+        // Windows 10 2004+: a janela continua visivel para o usuario, mas nao aparece em capturas de tela.
+        // Assim paineis e molduras do proprio app nunca entram na imagem. Devolve false em Windows antigos.
+        public static bool ExcludeFromCapture(IntPtr hWnd)
+        {
+            try { return SetWindowDisplayAffinity(hWnd, 0x11); } catch { return false; }
+        }
 
         public const uint MOUSEEVENTF_WHEEL = 0x0800;
         public const int VK_ESCAPE = 0x1B;

@@ -61,7 +61,7 @@ CapturaTelaCli.exe capture --window code --max-width 1280
 ### `gif <alvo> [--seconds 5] [--fps 10] [--max-width 960] [--cursor] [--out arq.gif]`
 Grava a area em GIF animado (ate 120 s, 25 fps). Recusa gravacoes que usariam mais de ~900 MB de memoria. O JSON traz `frames`, `bytes` e dimensoes. Quadros iguais viram um so quadro mais longo, entao `frames` pode ser menor que `seconds * fps`.
 
-### `scroll <alvo> [--max-steps 60] [--out arq]`
+### `scroll <alvo> [--max-steps 60] [--out arq]` (automatica; a rolagem manual so existe no app com janela)
 Rola o conteudo sob a area com a roda do mouse (o cursor vai para o centro da area e e restaurado depois) e costura as imagens. Para quando o conteudo acaba ou ao apertar **Esc**.
 
 ### `ocr (<alvo> | --image arq)`

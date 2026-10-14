@@ -11,7 +11,7 @@ namespace CapturaTela
     // Uma barra flutuante no topo permite trocar de modo sem voltar a janela principal.
     class OverlayForm : Form
     {
-        static readonly string[] ModeNames = { "Retangulo", "Forma livre", "Janela", "Tela inteira", "Rolagem", "Gravar GIF" };
+        static readonly string[] ModeNames = ModeList.Names;
 
         // painel mais largo que a lupa para caber "x, y   #RRGGBB" (coordenadas grandes em varios monitores)
         const int LoupeCells = 15, LoupeScale = 8, LoupePanelW = 196;
@@ -61,7 +61,7 @@ namespace CapturaTela
         {
             barButtons.Clear();
             var scr = Screen.PrimaryScreen.Bounds;
-            int w = 98, h = 32, gap = 4;
+            int w = 106, h = 32, gap = 4;
             int total = ModeNames.Length * w + (ModeNames.Length - 1) * gap + 40 + gap;
             int x = scr.X - origin.X + (scr.Width - total) / 2, y = scr.Y - origin.Y + 14;
             for (int i = 0; i < ModeNames.Length; i++) { barButtons.Add(new Rectangle(x, y, w, h)); x += w + gap; }
@@ -127,7 +127,7 @@ namespace CapturaTela
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Escape) { Result = null; DialogResult = DialogResult.Cancel; Close(); }
-            else if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D6) SetMode((CaptureMode)(e.KeyCode - Keys.D1));
+            else if (e.KeyCode >= Keys.D1 && e.KeyCode < Keys.D1 + ModeList.Order.Length) SetMode(ModeList.Order[e.KeyCode - Keys.D1]);
             base.OnKeyDown(e);
         }
 
@@ -148,7 +148,7 @@ namespace CapturaTela
             if (b >= 0)
             {
                 if (b == barButtons.Count - 1) { DialogResult = DialogResult.Cancel; Close(); }
-                else SetMode((CaptureMode)b);
+                else SetMode(ModeList.Order[b]);
                 return;
             }
             if (BarBounds.Contains(e.Location)) return;
@@ -328,7 +328,8 @@ namespace CapturaTela
         {
             string hint = mode == CaptureMode.Window ? "Clique na janela para capturar"
                         : mode == CaptureMode.Freeform ? "Desenhe a forma livre"
-                        : mode == CaptureMode.Scroll ? "Selecione a area com conteudo rolavel (a rolagem e feita automaticamente)"
+                        : mode == CaptureMode.Scroll ? "Selecione a area com conteudo rolavel (o app rola sozinho com a roda do mouse)"
+                        : mode == CaptureMode.ScrollManual ? "Selecione a area com conteudo rolavel (voce mesmo rola, devagar, com a roda do mouse)"
                         : mode == CaptureMode.Record ? "Selecione a area para gravar em GIF"
                         : "Arraste para selecionar a area";
             hint += "  -  Esc cancela  -  setas ajustam 1 px";
@@ -354,7 +355,7 @@ namespace CapturaTela
                 for (int i = 0; i < barButtons.Count; i++)
                 {
                     var r = barButtons[i];
-                    bool selected = i == (int)mode, hover = i == hoverButton;
+                    bool selected = i == ModeList.IndexOf(mode), hover = i == hoverButton;
                     if (selected || hover)
                         using (var b = new SolidBrush(selected ? Color.FromArgb(0, 120, 215) : Color.FromArgb(70, 70, 70)))
                             g.FillRectangle(b, r);

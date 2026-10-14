@@ -18,7 +18,7 @@ namespace CapturaTela
         bool firstShow = true;
         bool exiting;
         bool capturing;
-        RecorderForm recorder;
+        IStoppable activeSession;   // gravacao de GIF ou rolagem manual em andamento
 
         readonly ToolStrip bar = new ToolStrip();
         readonly ToolStrip tools = new ToolStrip();
@@ -52,16 +52,16 @@ namespace CapturaTela
             bar.GripStyle = ToolStripGripStyle.Hidden;
             bar.Padding = new Padding(6, 4, 6, 4);
 
-            newBtn = Btn("+ Novo", "Nova captura (Ctrl+N ou o atalho global)", delegate { StartCapture(modeBox.SelectedIndex); });
+            newBtn = Btn("+ Novo", "Nova captura (Ctrl+N ou o atalho global)", delegate { StartCapture(CurrentMode); });
             newBtn.Font = new Font(Font, FontStyle.Bold);
             bar.Items.Add(newBtn);
 
             modeBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            modeBox.Items.AddRange(new object[] { "Retangulo", "Forma livre", "Janela", "Tela inteira", "Rolagem", "Gravar GIF" });
-            modeBox.SelectedIndex = settings.Mode;
-            modeBox.ToolTipText = "Modo de captura";
-            modeBox.Width = 110;
-            modeBox.SelectedIndexChanged += delegate { settings.Mode = modeBox.SelectedIndex; settings.Save(); };
+            modeBox.Items.AddRange(ModeList.Names);
+            modeBox.SelectedIndex = ModeList.IndexOf((CaptureMode)settings.Mode);
+            modeBox.ToolTipText = "Modo de captura (Rolagem auto: o app rola sozinho; Rolagem manual: voce rola)";
+            modeBox.Width = 120;
+            modeBox.SelectedIndexChanged += delegate { settings.Mode = (int)CurrentMode; settings.Save(); };
             bar.Items.Add(modeBox);
 
             delayBox.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -221,12 +221,13 @@ namespace CapturaTela
             var menu = new ContextMenuStrip();
             menu.Items.Add("Abrir", null, delegate { ShowMain(); });
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Capturar retangulo", null, delegate { StartCapture(0); });
-            menu.Items.Add("Capturar forma livre", null, delegate { StartCapture(1); });
-            menu.Items.Add("Capturar janela", null, delegate { StartCapture(2); });
-            menu.Items.Add("Capturar tela inteira", null, delegate { StartCapture(3); });
-            menu.Items.Add("Captura com rolagem", null, delegate { StartCapture(4); });
-            menu.Items.Add("Gravar GIF", null, delegate { StartCapture(5); });
+            menu.Items.Add("Capturar retangulo", null, delegate { StartCapture(CaptureMode.Rectangle); });
+            menu.Items.Add("Capturar forma livre", null, delegate { StartCapture(CaptureMode.Freeform); });
+            menu.Items.Add("Capturar janela", null, delegate { StartCapture(CaptureMode.Window); });
+            menu.Items.Add("Capturar tela inteira", null, delegate { StartCapture(CaptureMode.FullScreen); });
+            menu.Items.Add("Captura com rolagem automatica", null, delegate { StartCapture(CaptureMode.Scroll); });
+            menu.Items.Add("Captura com rolagem manual", null, delegate { StartCapture(CaptureMode.ScrollManual); });
+            menu.Items.Add("Gravar GIF", null, delegate { StartCapture(CaptureMode.Record); });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Configuracoes...", null, delegate { ShowMain(); OpenSettings(); });
             menu.Items.Add("Sair", null, delegate { exiting = true; Close(); });
@@ -423,15 +424,15 @@ namespace CapturaTela
             if (m.Msg == Native.WM_HOTKEY)
             {
                 // durante uma gravacao o atalho global para a gravacao
-                if (recorder != null) recorder.RequestStop();
-                else StartCapture(modeBox.SelectedIndex);
+                if (activeSession != null) activeSession.RequestStop();
+                else StartCapture(CurrentMode);
             }
             base.WndProc(ref m);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (e.Control && e.KeyCode == Keys.N) { StartCapture(modeBox.SelectedIndex); e.Handled = true; }
+            if (e.Control && e.KeyCode == Keys.N) { StartCapture(CurrentMode); e.Handled = true; }
             else if (e.Control && e.KeyCode == Keys.S) { if (canvas.Image != null) SaveImage(); e.Handled = true; }
             else if (e.Control && e.KeyCode == Keys.C) { if (canvas.Image != null) CopyImage(true); e.Handled = true; }
             else if (e.Control && e.KeyCode == Keys.Z) { canvas.Undo(); e.Handled = true; }
@@ -441,11 +442,13 @@ namespace CapturaTela
 
         // ------------------------------------------------------------ Captura
 
-        void StartCapture(int modeIndex)
+        CaptureMode CurrentMode { get { return ModeList.Order[Math.Max(0, modeBox.SelectedIndex)]; } }
+
+        void StartCapture(CaptureMode mode)
         {
             if (capturing) return;
             capturing = true;
-            var mode = (CaptureMode)modeIndex;
+
             int delay = Delays[Math.Max(0, delayBox.SelectedIndex)];
             bool wasVisible = Visible && WindowState != FormWindowState.Minimized;
             var prevState = WindowState;
@@ -496,13 +499,34 @@ namespace CapturaTela
                         if (ov.ShowDialog() != DialogResult.OK) return false;
                         result = ov.Result; chosen = ov.ChosenMode; area = ov.SelectedRect;
                     }
-                    if (chosen == CaptureMode.Scroll || chosen == CaptureMode.Record)
+                    if (chosen == CaptureMode.Scroll || chosen == CaptureMode.ScrollManual || chosen == CaptureMode.Record)
                     {
                         // deixa o desktop se redesenhar depois de fechar o overlay
                         System.Threading.Thread.Sleep(250);
                         Application.DoEvents();
-                        if (chosen == CaptureMode.Scroll) result = ScrollCapture.Run(area);
-                        else return RecordGif(area);
+                        if (chosen == CaptureMode.Record) return RecordGif(area);
+                        if (chosen == CaptureMode.ScrollManual)
+                        {
+                            using (var f = new ScrollManualForm(area))
+                            {
+                                activeSession = f;
+                                try { if (f.ShowDialog() != DialogResult.OK) return false; }
+                                finally { activeSession = null; }
+                                result = f.Result;
+                            }
+                        }
+                        else
+                        {
+                            result = ScrollCapture.Run(area);
+                            // nada rolou (ex.: o conteudo nao reage a roda do mouse): sugere o modo manual
+                            if (result != null && result.Height <= area.Height + 2)
+                            {
+                                ShowResult(result);
+                                statusLabel.Text = "A rolagem automatica nao moveu o conteudo. Tente o modo \"Rolagem manual\" na lista de modos.";
+                                Notify("Rolagem automatica sem efeito", "O conteudo nao rolou. Use o modo \"Rolagem manual\" e role voce mesmo.", ShowMain);
+                                return true;
+                            }
+                        }
                     }
                 }
                 if (result == null) return false;
@@ -518,12 +542,12 @@ namespace CapturaTela
             int delay;
             using (var rec = new RecorderForm(area))
             {
-                recorder = rec;
+                activeSession = rec;
                 try
                 {
                     if (rec.ShowDialog() != DialogResult.OK) return false;
                 }
-                finally { recorder = null; }
+                finally { activeSession = null; }
                 frames = rec.Frames; delay = rec.DelayMs;
             }
 
