@@ -13,6 +13,8 @@ namespace CapturaTela
         readonly ComboBox fmtBox = new ComboBox();
         readonly CheckBox tray = new CheckBox();
         readonly CheckBox startup = new CheckBox();
+        readonly CheckBox notify = new CheckBox();
+        readonly ComboBox themeBox = new ComboBox();
         uint mods;
         Keys key;
 
@@ -23,7 +25,7 @@ namespace CapturaTela
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
             StartPosition = FormStartPosition.CenterParent;
-            ClientSize = new Size(440, 270);
+            ClientSize = new Size(440, 340);
             Font = new Font("Segoe UI", 9);
 
             int y = 16;
@@ -68,12 +70,24 @@ namespace CapturaTela
             startup.Text = "Iniciar com o Windows (minimizado na bandeja)"; startup.Left = 16; startup.Top = y; startup.Width = 410;
             startup.Checked = AppSettings.GetStartWithWindows();
             Controls.Add(startup);
+            y += 26;
+            notify.Text = "Mostrar notificacao depois de capturar ou gravar"; notify.Left = 16; notify.Top = y; notify.Width = 410;
+            notify.Checked = s.Notify;
+            Controls.Add(notify);
+            y += 34;
+            Controls.Add(new Label { Text = "Tema:", Left = 16, Top = y + 3, Width = 50 });
+            themeBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            themeBox.Items.AddRange(new object[] { "Seguir o Windows", "Claro", "Escuro" });
+            themeBox.SelectedIndex = s.Theme;
+            themeBox.Left = 70; themeBox.Top = y; themeBox.Width = 160;
+            Controls.Add(themeBox);
 
-            var ok = new Button { Text = "OK", Left = 268, Top = 232, Width = 75, DialogResult = DialogResult.OK };
-            var cancel = new Button { Text = "Cancelar", Left = 349, Top = 232, Width = 75, DialogResult = DialogResult.Cancel };
+            var ok = new Button { Text = "OK", Left = 268, Top = 302, Width = 75, DialogResult = DialogResult.OK };
+            var cancel = new Button { Text = "Cancelar", Left = 349, Top = 302, Width = 75, DialogResult = DialogResult.Cancel };
             ok.Click += delegate { Apply(); };
             Controls.Add(ok); Controls.Add(cancel);
             AcceptButton = ok; CancelButton = cancel;
+            Theme.Apply(this);
         }
 
         void OnHotkeyDown(object sender, KeyEventArgs e)
@@ -114,6 +128,8 @@ namespace CapturaTela
             if (dirBox.Text.Trim().Length > 0) s.AutoSaveDir = dirBox.Text.Trim();
             s.AutoSaveFormat = fmtBox.SelectedIndex == 1 ? "jpg" : "png";
             s.CloseToTray = tray.Checked;
+            s.Notify = notify.Checked;
+            s.Theme = themeBox.SelectedIndex;
             AppSettings.SetStartWithWindows(startup.Checked);
             s.Save();
         }

@@ -28,7 +28,8 @@ namespace CapturaTela
         readonly Dictionary<string, ToolStripButton> toolBtns = new Dictionary<string, ToolStripButton>();
         readonly List<ToolStripItem> editItems = new List<ToolStripItem>();
         readonly ToolStripLabel zoomLabel = new ToolStripLabel("100%");
-        readonly ToolStripButton colorBtn, copyBtn, saveBtn, undoBtn, redoBtn, newBtn, settingsBtn;
+        readonly ToolStripButton colorBtn, copyBtn, saveBtn, undoBtn, redoBtn, newBtn, settingsBtn, ocrBtn;
+        Action balloonClick;
         readonly Panel scroller = new Panel();
         readonly Canvas canvas = new Canvas();
         readonly Label placeholder = new Label();
@@ -43,8 +44,9 @@ namespace CapturaTela
             ClientSize = new Size(960, 640);
             MinimumSize = new Size(700, 400);
             StartPosition = FormStartPosition.CenterScreen;
-            Icon = SystemIcons.Application;
+            Icon = AppIcon.Get(SystemInformation.IconSize);
             KeyPreview = true;
+            Theme.Preference = settings.Theme;
 
             // ---- barra principal: captura e acoes ----
             bar.GripStyle = ToolStripGripStyle.Hidden;
@@ -75,8 +77,9 @@ namespace CapturaTela
             redoBtn = Btn("Refazer", "Refazer (Ctrl+Y)", delegate { canvas.Redo(); });
             copyBtn = Btn("Copiar", "Copiar para a area de transferencia (Ctrl+C)", delegate { CopyImage(true); });
             saveBtn = Btn("Salvar", "Salvar como... (Ctrl+S)", delegate { SaveImage(); });
-            bar.Items.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn });
-            editItems.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn });
+            ocrBtn = Btn("Copiar texto", "Reconhecer o texto da imagem (OCR) e copiar", delegate { RunOcr(); });
+            bar.Items.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn, ocrBtn });
+            editItems.AddRange(new ToolStripItem[] { undoBtn, redoBtn, copyBtn, saveBtn, ocrBtn });
 
             settingsBtn = Btn("Configuracoes", "Atalho, salvamento automatico, bandeja e inicializacao", delegate { OpenSettings(); });
             settingsBtn.Alignment = ToolStripItemAlignment.Right;
@@ -151,6 +154,64 @@ namespace CapturaTela
             ApplyWidth();
             SetEditEnabled(false);
             BuildTray();
+            ApplyTheme();
+        }
+
+        void ApplyTheme()
+        {
+            Theme.Preference = settings.Theme;
+            bool dark = Theme.IsDark;
+            Theme.Apply(this);
+            Theme.Apply(bar, dark);
+            Theme.Apply(tools, dark);
+            Theme.Apply(status, dark);
+            scroller.BackColor = dark ? Color.FromArgb(24, 24, 24) : Color.FromArgb(48, 48, 48);
+            UpdateColorButton();
+        }
+
+        // Notificacao do Windows (balao da bandeja); o clique executa a acao.
+        void Notify(string title, string text, Action onClick)
+        {
+            if (!settings.Notify) return;
+            balloonClick = onClick;
+            tray.ShowBalloonTip(4000, title, text, ToolTipIcon.Info);
+        }
+
+        static void OpenPath(string path)
+        {
+            try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch { }
+        }
+
+        void RunOcr()
+        {
+            if (canvas.Image == null) return;
+            statusLabel.Text = "Reconhecendo texto...";
+            Cursor = Cursors.WaitCursor;
+            using (var flat = canvas.Flatten())
+            {
+                Ocr.Recognize(flat, delegate(string text, string error)
+                {
+                    BeginInvoke(new Action(delegate
+                    {
+                        Cursor = Cursors.Default;
+                        if (error != null)
+                        {
+                            statusLabel.Text = "OCR falhou";
+                            MessageBox.Show(this, error, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        else if (string.IsNullOrEmpty(text))
+                        {
+                            statusLabel.Text = "Nenhum texto encontrado na imagem";
+                        }
+                        else
+                        {
+                            try { Clipboard.SetText(text); } catch { }
+                            statusLabel.Text = "Texto reconhecido e copiado (" + text.Length + " caracteres)";
+                            using (var f = new OcrResultForm(text)) f.ShowDialog(this);
+                        }
+                    }));
+                });
+            }
         }
 
         // ------------------------------------------------------------ Bandeja
@@ -170,8 +231,13 @@ namespace CapturaTela
             menu.Items.Add("Configuracoes...", null, delegate { ShowMain(); OpenSettings(); });
             menu.Items.Add("Sair", null, delegate { exiting = true; Close(); });
             tray.ContextMenuStrip = menu;
-            tray.Icon = Icon;
+            tray.Icon = AppIcon.Get(SystemInformation.SmallIconSize);
             tray.Text = "Ferramenta de Captura";
+            tray.BalloonTipClicked += delegate
+            {
+                var a = balloonClick; balloonClick = null;
+                if (a != null) a();
+            };
             tray.Visible = true;
             tray.MouseDoubleClick += delegate(object s, MouseEventArgs e) { if (e.Button == MouseButtons.Left) ShowMain(); };
         }
@@ -298,6 +364,7 @@ namespace CapturaTela
                 {
                     RegisterHotkeys();
                     UpdatePlaceholder();
+                    ApplyTheme();
                 }
             }
         }
@@ -483,6 +550,8 @@ namespace CapturaTela
                 GifWriter.Save(file, frames, delay);
                 long kb = new FileInfo(file).Length / 1024;
                 statusLabel.Text = "GIF salvo em " + file + " (" + frames.Count + " quadros, " + kb + " KB)";
+                string gif = file;
+                Notify("GIF salvo", kb + " KB em " + gif + ". Clique para abrir.", delegate { OpenPath(gif); });
                 try
                 {
                     var list = new System.Collections.Specialized.StringCollection();
@@ -515,12 +584,11 @@ namespace CapturaTela
             SetEditEnabled(true);
             CopyImage(false);
             string msg = "Captura: " + bmp.Width + " x " + bmp.Height + " px  -  copiada para a area de transferencia";
-            if (settings.AutoSave)
-            {
-                string saved = AutoSaveCurrent();
-                if (saved != null) msg += "  -  salva em " + saved;
-            }
+            string saved = settings.AutoSave ? AutoSaveCurrent() : null;
+            if (saved != null) msg += "  -  salva em " + saved;
             statusLabel.Text = msg;
+            if (saved != null) Notify("Captura salva", "Copiada e salva em " + saved + ". Clique para abrir.", delegate { OpenPath(saved); });
+            else Notify("Captura copiada", "Ela esta na area de transferencia. Clique para editar.", ShowMain);
         }
 
         string AutoSaveCurrent()

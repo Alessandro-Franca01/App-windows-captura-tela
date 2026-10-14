@@ -15,6 +15,9 @@ Clone portatil da Ferramenta de Recorte do Windows, em um unico `.exe` (~25 KB),
 - Fica na bandeja do sistema (fechar a janela nao encerra o app) com menu de captura rapida
 - Salvamento automatico de cada captura em uma pasta (PNG/JPG)
 - Atalho global configuravel e opcao de iniciar com o Windows (/tray)
+- **OCR** (botao Copiar texto): reconhece o texto da imagem com o motor nativo do Windows e copia
+- Notificacoes do Windows ao capturar/gravar (clique abre o arquivo ou o editor)
+- Icone proprio, tema claro/escuro (ou seguir o Windows)
 - Configuracoes lembradas entre execucoes em CapturaTela.ini (ao lado do .exe)
 
 ## Compilar
@@ -36,12 +39,15 @@ Gera `CapturaTela.exe` na raiz. Nao precisa de SDK, apenas do `csc.exe` que acom
 | Atalho global (durante gravacao) | Para a gravacao |
 
 ## Estrutura
-- `src/` - codigo-fonte (Native, OverlayForm, Canvas, Annotations, TextPrompt, ScrollCapture, RecorderForm, GifWriter, Settings, SettingsForm, MainForm, Program)
+- `src/` - codigo-fonte (Native, OverlayForm, Canvas, Annotations, TextPrompt, ScrollCapture, RecorderForm, GifWriter, Ocr, Theme, Settings, SettingsForm, MainForm, Program)
 - `build.bat` - script de compilacao
+- `assets/icon.ico` - icone (gerado por `tools/MakeIcon.cs`)
 
 
 
 ## Limitacoes conhecidas
 - Captura com rolagem: cabecalhos/rodapes fixos (sticky) do site podem aparecer repetidos; funciona melhor com conteudo que rola por inteiro.
 - Gravacao: somente GIF (sem MP4) e sem audio.
+- OCR: exige ao menos um idioma de OCR instalado no Windows (Configuracoes > Hora e idioma > Idioma e regiao).
+
 
